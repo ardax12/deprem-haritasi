@@ -1,0 +1,12 @@
+.git
+.gradle
+build
+out
+.idea
+*.iml
+frontend/node_modules
+frontend/dist
+research/.venv
+research/__pycache__
+graphify-out
+*.log

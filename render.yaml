@@ -1,0 +1,22 @@
+services:
+  - type: web
+    name: deprem-izleme
+    runtime: docker
+    plan: free
+    region: frankfurt
+    healthCheckPath: /api/v1/status
+    envVars:
+      - key: PORT
+        value: 8080
+      - key: SPRING_DATASOURCE_DRIVER
+        value: org.postgresql.Driver
+      - key: AFAD_SYNC_ENABLED
+        value: "true"
+      - key: AFAD_SYNC_INTERVAL_MS
+        value: "600000"
+      - key: SPRING_DATASOURCE_URL
+        sync: false
+      - key: SPRING_DATASOURCE_USERNAME
+        sync: false
+      - key: SPRING_DATASOURCE_PASSWORD
+        sync: false
