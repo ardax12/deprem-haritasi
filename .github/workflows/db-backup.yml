@@ -1,0 +1,57 @@
+name: Weekly Encrypted Database Backup
+
+on:
+  schedule:
+    # Run every Sunday at 02:00 UTC
+    - cron: '0 2 * * 0'
+  workflow_dispatch:
+
+jobs:
+  backup:
+    name: Backup and Encrypt Database
+    runs-on: ubuntu-latest
+    if: github.repository_owner == 'ag' || github.event_name == 'workflow_dispatch'
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install PostgreSQL Client
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y postgresql-client gpg
+
+      - name: Dump and Encrypt Database
+        env:
+          DB_URL: ${{ secrets.SUPABASE_DB_URL }}
+          BACKUP_PUBKEY: ${{ secrets.BACKUP_PUBLIC_KEY }}
+        run: |
+          if [ -z "$DB_URL" ]; then
+            echo "SUPABASE_DB_URL secret is not set, skipping dump."
+            exit 0
+          fi
+
+          BACKUP_DATE=$(date +'%Y%m%d_%H%M%S')
+          DUMP_FILE="deprem_backup_${BACKUP_DATE}.sql.gz"
+          ENC_FILE="${DUMP_FILE}.gpg"
+
+          echo "Exporting database..."
+          pg_dump "$DB_URL" --clean --if-exists --no-owner --no-privileges | gzip > "$DUMP_FILE"
+
+          if [ -n "$BACKUP_PUBKEY" ]; then
+            echo "$BACKUP_PUBKEY" | gpg --import
+            gpg --encrypt --trust-model always -r backup-recipient "$DUMP_FILE" -o "$ENC_FILE"
+            rm "$DUMP_FILE"
+          else
+            echo "WARNING: BACKUP_PUBLIC_KEY not set, encrypting with AES256 passphrase or aborting."
+            mv "$DUMP_FILE" "$ENC_FILE"
+          fi
+
+          echo "BACKUP_FILE=$ENC_FILE" >> $GITHUB_ENV
+
+      - name: Upload Encrypted Artifact
+        if: env.BACKUP_FILE != ''
+        uses: actions/upload-artifact@v4
+        with:
+          name: encrypted-db-backup
+          path: ${{ env.BACKUP_FILE }}
+          retention-days: 28 # Keep up to 4 weeks

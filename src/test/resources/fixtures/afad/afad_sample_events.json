@@ -1,0 +1,36 @@
+[
+  {
+    "rms": "0.7",
+    "eventID": "731199",
+    "location": "Saimbeyli (Adana)",
+    "latitude": "37.7725",
+    "longitude": "36.15617",
+    "depth": "7",
+    "type": "ML",
+    "magnitude": "2.1",
+    "country": "Türkiye",
+    "province": "Adana",
+    "district": "Saimbeyli",
+    "neighborhood": "Ayvacık",
+    "date": "2026-10-12T00:18:23",
+    "isEventUpdate": false,
+    "lastUpdateDate": null
+  },
+  {
+    "rms": "0.61",
+    "eventID": "731198",
+    "location": "Ege Denizi - [10.59 km] Ayvalık (Balıkesir)",
+    "latitude": "39.19883",
+    "longitude": "26.65",
+    "depth": "17.65",
+    "type": "ML",
+    "magnitude": "1.4",
+    "country": "Türkiye",
+    "province": "Balıkesir",
+    "district": "Ayvalık",
+    "neighborhood": null,
+    "date": "2026-10-12T00:42:14",
+    "isEventUpdate": false,
+    "lastUpdateDate": null
+  }
+]

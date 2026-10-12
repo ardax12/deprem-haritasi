@@ -1,0 +1,19 @@
+[
+  {
+    "rms": "0.4",
+    "eventID": "731299",
+    "location": "Büyüklük Yok",
+    "latitude": "39.0",
+    "longitude": "35.0",
+    "depth": null,
+    "type": null,
+    "magnitude": null,
+    "country": "Türkiye",
+    "province": null,
+    "district": null,
+    "neighborhood": null,
+    "date": "2026-10-12T05:00:00",
+    "isEventUpdate": false,
+    "lastUpdateDate": null
+  }
+]

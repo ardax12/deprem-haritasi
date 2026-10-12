@@ -1,0 +1,28 @@
+[
+  {
+    "rms": "0.5",
+    "eventID": "999001",
+    "location": "Geçersiz Koordinat",
+    "latitude": "120.5",
+    "longitude": "36.15",
+    "depth": "7",
+    "type": "ML",
+    "magnitude": "2.0",
+    "date": "2026-10-12T00:00:00",
+    "isEventUpdate": false,
+    "lastUpdateDate": null
+  },
+  {
+    "rms": "0.5",
+    "eventID": "999002",
+    "location": "Bozuk Tarih",
+    "latitude": "38.5",
+    "longitude": "36.15",
+    "depth": "7",
+    "type": "ML",
+    "magnitude": "2.0",
+    "date": "gecersiz-tarih",
+    "isEventUpdate": false,
+    "lastUpdateDate": null
+  }
+]

@@ -1,0 +1,72 @@
+import type { EarthquakesResponse, EarthquakeDetail, SystemStatus, FilterParams } from '../types/earthquake';
+
+const API_BASE = '/api/v1';
+
+export async function fetchEarthquakes(filters: FilterParams, page: number = 0): Promise<EarthquakesResponse> {
+  const now = new Date();
+  let start = new Date(now.getTime() - 24 * 60 * 60 * 1000); // default 24h
+
+  if (filters.timeRange === '3d') {
+    start = new Date(now.getTime() - 3 * 24 * 60 * 60 * 1000);
+  } else if (filters.timeRange === '7d') {
+    start = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+  }
+
+  const query = new URLSearchParams();
+  query.set('start', start.toISOString());
+  query.set('end', now.toISOString());
+  query.set('page', page.toString());
+  query.set('pageSize', '150');
+  query.set('sort', filters.sortBy);
+
+  if (filters.minMagnitude !== null && filters.minMagnitude > 0) {
+    query.set('minMagnitude', filters.minMagnitude.toString());
+  }
+  if (filters.magnitudeType && filters.magnitudeType !== 'ALL') {
+    query.set('magnitudeType', filters.magnitudeType);
+  }
+  if (filters.place && filters.place.trim().length > 0) {
+    query.set('place', filters.place.trim());
+  }
+
+  const res = await fetch(`${API_BASE}/earthquakes?${query.toString()}`, {
+    headers: {
+      'Accept': 'application/json'
+    }
+  });
+
+  if (!res.ok) {
+    const errorBody = await res.json().catch(() => null);
+    throw new Error(errorBody?.detail || `Sunucu hatası: HTTP ${res.status}`);
+  }
+
+  return res.json();
+}
+
+export async function fetchEarthquakeDetail(id: string): Promise<EarthquakeDetail> {
+  const res = await fetch(`${API_BASE}/earthquakes/${encodeURIComponent(id)}`, {
+    headers: {
+      'Accept': 'application/json'
+    }
+  });
+
+  if (!res.ok) {
+    throw new Error(`Detay yüklenemedi: HTTP ${res.status}`);
+  }
+
+  return res.json();
+}
+
+export async function fetchStatus(): Promise<SystemStatus> {
+  const res = await fetch(`${API_BASE}/status`, {
+    headers: {
+      'Accept': 'application/json'
+    }
+  });
+
+  if (!res.ok) {
+    throw new Error(`Durum sorgulanamadı: HTTP ${res.status}`);
+  }
+
+  return res.json();
+}

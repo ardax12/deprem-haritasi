@@ -1,0 +1,19 @@
+[
+  {
+    "rms": "0.7",
+    "eventID": "731199",
+    "location": "Saimbeyli (Adana) - Revize",
+    "latitude": "37.7725",
+    "longitude": "36.15617",
+    "depth": "8.5",
+    "type": "Mw",
+    "magnitude": "2.3",
+    "country": "Türkiye",
+    "province": "Adana",
+    "district": "Saimbeyli",
+    "neighborhood": "Ayvacık",
+    "date": "2026-10-12T00:18:23",
+    "isEventUpdate": true,
+    "lastUpdateDate": "2026-10-12T01:00:00"
+  }
+]

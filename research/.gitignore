@@ -1,0 +1,8 @@
+.venv/
+__pycache__/
+*.pyc
+data/
+*.csv
+*.parquet
+*.json
+.ipynb_checkpoints/

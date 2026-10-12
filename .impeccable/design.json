@@ -1,0 +1,76 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-10-12T11:15:00Z",
+  "title": "Design System: Türkiye Deprem İzleme Haritası",
+  "extensions": {
+    "colorMeta": {
+      "primary": { "role": "primary", "displayName": "Derin Gözlemevi Laciverti", "canonical": "#1e3a8a", "tonalRamp": ["#0f172a", "#1e3a8a", "#1e40af", "#2563eb", "#3b82f6", "#60a5fa", "#93c5fd", "#dbeafe"] },
+      "focus-ring": { "role": "secondary", "displayName": "Radar Mavisi", "canonical": "#2563eb", "tonalRamp": ["#1e3a8a", "#1d4ed8", "#2563eb", "#3b82f6", "#60a5fa", "#93c5fd", "#bfdbfe", "#eff6ff"] },
+      "surface": { "role": "neutral", "displayName": "Zemin Beyazı", "canonical": "#ffffff", "tonalRamp": ["#0f172a", "#1e293b", "#334155", "#64748b", "#94a3b8", "#cbd5e1", "#f1f5f9", "#ffffff"] },
+      "accent-green": { "role": "tertiary", "displayName": "Hafif Sarsıntı Yeşili", "canonical": "#15803d", "tonalRamp": ["#14532d", "#166534", "#15803d", "#22c55e", "#4ade80", "#86efac", "#bbf7d0", "#dcfce7"] },
+      "accent-red": { "role": "tertiary", "displayName": "Şiddetli Sarsıntı Kırmızısı", "canonical": "#b91c1c", "tonalRamp": ["#7f1d1d", "#991b1b", "#b91c1c", "#dc2626", "#ef4444", "#f87171", "#fca5a5", "#fee2e2"] }
+    },
+    "typographyMeta": {
+      "display": { "displayName": "Gözlemevi Başlığı", "purpose": "Uygulama ana başlığı" },
+      "headline": { "displayName": "Modal Başlığı / Büyüklük", "purpose": "Olay başlığı ve büyük büyüklük rakamları" },
+      "title": { "displayName": "Kart Konumu", "purpose": "Deprem yer ve il/ilçe adı" },
+      "body": { "displayName": "Gövde Metni", "purpose": "Açıklamalar ve form etiketleri" },
+      "label": { "displayName": "Teknik Etiket", "purpose": "Zaman damgası, derinlik ve durum rozetleri" }
+    },
+    "shadows": [
+      { "name": "card-hover", "value": "0 2px 6px rgba(0, 0, 0, 0.05)", "purpose": "Deprem kartı üzerine gelindiğinde hafif derinlik" },
+      { "name": "modal-depth", "value": "0 20px 25px -5px rgba(0, 0, 0, 0.2)", "purpose": "Detay modalının arka plan karartması üzerindeki odağı" }
+    ],
+    "motion": [
+      { "name": "state-transition", "value": "all 0.15s ease", "purpose": "Hover, border ve zemin rengi geçişleri" }
+    ],
+    "breakpoints": [
+      { "name": "mobile", "value": "900px" }
+    ]
+  },
+  "components": [
+    {
+      "name": "Refresh Button",
+      "kind": "button",
+      "refersTo": "button-refresh",
+      "description": "Veri akışını anlık tazeleyen hafif buton.",
+      "html": "<button class=\"ds-btn-refresh\">↻ Yenile</button>",
+      "css": ".ds-btn-refresh { background-color: #f1f5f9; border: 1px solid #e2e8f0; border-radius: 6px; padding: 6px 12px; font-size: 0.8125rem; font-weight: 600; color: #0f172a; cursor: pointer; transition: all 0.15s ease; } .ds-btn-refresh:hover { background-color: #e2e8f0; }"
+    },
+    {
+      "name": "Earthquake Card",
+      "kind": "card",
+      "refersTo": "card-earthquake",
+      "description": "Büyüklük, yer, derinlik ve zamanı gösteren liste kartı.",
+      "html": "<div class=\"ds-card\"><div class=\"ds-card-mag\"><span class=\"ds-val\">3.2</span><span class=\"ds-type\">ML</span></div><div class=\"ds-info\"><div class=\"ds-title\">Soma (Manisa)</div><div class=\"ds-sub\">🕒 10:00 TSİ • 7.0 km</div></div></div>",
+      "css": ".ds-card { display: flex; align-items: center; gap: 12px; background: #fff; border: 1px solid #e2e8f0; border-radius: 8px; padding: 12px; } .ds-card-mag { background: #fef9c3; color: #a16207; border-radius: 8px; padding: 6px 10px; display: flex; flex-direction: column; align-items: center; min-width: 48px; } .ds-val { font-size: 1.125rem; font-weight: 800; line-height: 1; } .ds-type { font-size: 0.625rem; font-weight: 700; margin-top: 2px; } .ds-title { font-size: 0.9375rem; font-weight: 700; color: #0f172a; } .ds-sub { font-size: 0.75rem; color: #64748b; margin-top: 2px; }"
+    }
+  ],
+  "narrative": {
+    "northStar": "Sismik Radar / Güvenli Gözlemevi",
+    "overview": "Türkiye Deprem İzleme Haritası, acil durum ve sarsıntı sonrasındaki stresli anlarda kullanıcıya sakin, güven veren ve doğrudan doğrulanabilir veri sunan bir gözlemevi arayüzüdür.",
+    "keyCharacteristics": [
+      "Sakin Ciddiyet: Derin lacivert (#1e3a8a) ve dengeli nötr tonlar.",
+      "Anlaşılır Büyüklük Hiyerarşisi: Dört aşamalı renk skalası ve açık sayısal tipografi.",
+      "Şeffaf Veri Durumu: Resmî erken uyarı sorumluluk reddi ve veri gecikme durumu.",
+      "Hafif ve Duyarlı: 1px ince sınırlar, hafif derinlik ve WCAG 2.2 AA uyumu."
+    ],
+    "rules": [
+      { "name": "The Double-Coding Rule", "body": "Büyüklük ve durum bilgisi hiçbir zaman yalnızca renkle kodlanamaz; daima sayısal değer ve metinsel ölçek tipiyle birlikte sunulmalıdır.", "section": "colors" },
+      { "name": "The Banner Honesty Rule", "body": "AFAD veri akışı 20 dakikadan eski olduğunda sarı, 60 dakikadan eski olduğunda kırmızı durum rozeti gizlenemez.", "section": "colors" },
+      { "name": "The Tabular Numbers Rule", "body": "Olay zaman damgaları, koordinatlar ve büyüklük değerleri kaymaları engellemek için tabular-nums ile dizilir.", "section": "typography" },
+      { "name": "The Border-Over-Shadow Rule", "body": "Kartlar ve bölümler gölgeyle değil, 1px sınır çizgisi (#e2e8f0) ve hafif arka plan ayrımıyla sınırlandırılır.", "section": "elevation" }
+    ],
+    "dos": [
+      "Do Her zaman sarsıntı zamanını TSİ ve UTC olarak açıkça belirtin.",
+      "Do Harita üzerinde büyüklüğe göre ölçeklenen çember katmanı ve 0.25 opaklıkta dış ışıma halkası kullanın.",
+      "Do Liste kartlarında klavye ile Enter ve Boşluk tuşlarıyla gezinmeyi kusursuz tutun.",
+      "Do Eksik büyüklük veya derinlik değerlerinde boşluk bırakmak yerine 'Raporlanmadı' ibaresini kullanın."
+    ],
+    "donts": [
+      "Don't Kırmızı rengi tek başına hafif sarsıntılar veya genel butonlar için kullanmayın.",
+      "Don't Haritayı tek etkileşim yolu haline getirmeyin; liste görünümü tam bağımsız çalışabilmelidir.",
+      "Don't Resmî kurum izlenimi yaratacak asılsız erken uyarı grafikleri veya siren efektleri eklemeyin."
+    ]
+  }
+}
