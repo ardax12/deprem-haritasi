@@ -29,4 +29,10 @@ public interface SourceReportRevisionRepository extends JpaRepository<SourceRepo
 
     @Query("SELECT MAX(r.occurredAt) FROM SourceReportRevision r")
     Optional<Instant> findLatestOccurredAt();
+
+    @Query("SELECT MIN(r.occurredAt) FROM SourceReportRevision r")
+    Optional<Instant> findEarliestOccurredAt();
+
+    @Query("SELECT r FROM SourceReportRevision r JOIN FETCH r.sourceReport WHERE r.id = r.sourceReport.currentRevisionId AND r.occurredAt < :cutoff ORDER BY r.occurredAt ASC")
+    List<SourceReportRevision> findCurrentRevisionsOccurredBefore(@Param("cutoff") Instant cutoff);
 }

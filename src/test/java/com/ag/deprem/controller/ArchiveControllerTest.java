@@ -19,7 +19,6 @@ import java.util.Optional;
 import java.util.UUID;
 
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -28,6 +27,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 @SpringBootTest
 class ArchiveControllerTest {
+
+    private static final String VALID_ADMIN_KEY = "test-admin-secret-key";
 
     @Autowired
     private WebApplicationContext webApplicationContext;
@@ -46,7 +47,7 @@ class ArchiveControllerTest {
     }
 
     @Test
-    void testListManifests() throws Exception {
+    void testListManifestsIsPublic() throws Exception {
         ArchiveManifestDto manifest = new ArchiveManifestDto(
                 UUID.randomUUID(),
                 "archive-2026-09",
@@ -79,16 +80,35 @@ class ArchiveControllerTest {
     }
 
     @Test
-    void testVerifyArchive() throws Exception {
+    void testPostEndpointsRequireAdminKey() throws Exception {
+        // Without header -> 401
+        mockMvc.perform(post("/api/v1/archive/verify/archive-2026-09"))
+                .andExpect(status().isUnauthorized());
+
+        // With wrong header -> 401
+        mockMvc.perform(post("/api/v1/archive/verify/archive-2026-09")
+                        .header("X-Admin-Key", "wrong-secret"))
+                .andExpect(status().isUnauthorized());
+
+        // Backfill without header -> 401
+        mockMvc.perform(post("/api/v1/archive/backfill")
+                        .param("start", "2026-09-01T00:00:00Z")
+                        .param("end", "2026-09-02T00:00:00Z"))
+                .andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    void testVerifyArchiveWithValidKey() throws Exception {
         when(archiveExporterService.verifyArchive("archive-2026-09")).thenReturn(true);
 
-        mockMvc.perform(post("/api/v1/archive/verify/archive-2026-09"))
+        mockMvc.perform(post("/api/v1/archive/verify/archive-2026-09")
+                        .header("X-Admin-Key", VALID_ADMIN_KEY))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.verified").value(true));
     }
 
     @Test
-    void testTriggerBackfill() throws Exception {
+    void testTriggerBackfillWithValidKey() throws Exception {
         BackfillResultDto result = new BackfillResultDto(
                 Instant.now().minusSeconds(86400),
                 Instant.now(),
@@ -98,10 +118,17 @@ class ArchiveControllerTest {
         when(backfillService.runBackfill(any(), any())).thenReturn(result);
 
         mockMvc.perform(post("/api/v1/archive/backfill")
+                        .header("X-Admin-Key", VALID_ADMIN_KEY)
                         .param("start", "2026-09-01T00:00:00Z")
                         .param("end", "2026-09-02T00:00:00Z"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true))
                 .andExpect(jsonPath("$.totalEventsFetched").value(25));
+    }
+
+    @Test
+    void testPathTraversalRejected() throws Exception {
+        mockMvc.perform(get("/api/v1/archive/manifests/..%2F..%2Fetc%2Fpasswd"))
+                .andExpect(status().isBadRequest());
     }
 }

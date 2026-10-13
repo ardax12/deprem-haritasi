@@ -19,14 +19,30 @@ public class WebConfig implements WebMvcConfigurer {
     @Value("${app.archive.directory:./archive}")
     private String archiveDirectory;
 
+    private final AdminApiKeyInterceptor adminApiKeyInterceptor;
+
+    public WebConfig(AdminApiKeyInterceptor adminApiKeyInterceptor) {
+        this.adminApiKeyInterceptor = adminApiKeyInterceptor;
+    }
+
     @Override
     public void addCorsMappings(CorsRegistry registry) {
         registry.addMapping("/api/**")
                 .allowedOrigins(allowedOrigins.toArray(new String[0]))
                 .allowedMethods("GET", "POST", "OPTIONS")
-                .allowedHeaders("Content-Type", "If-None-Match", "Accept")
+                .allowedHeaders("Content-Type", "If-None-Match", "Accept", "X-Admin-Key")
                 .exposedHeaders("ETag", "Cache-Control")
                 .maxAge(3600);
+    }
+
+    @Override
+    public void addInterceptors(org.springframework.web.servlet.config.annotation.InterceptorRegistry registry) {
+        registry.addInterceptor(adminApiKeyInterceptor)
+                .addPathPatterns(
+                        "/api/v1/archive/export",
+                        "/api/v1/archive/verify/**",
+                        "/api/v1/archive/backfill"
+                );
     }
 
     @Override

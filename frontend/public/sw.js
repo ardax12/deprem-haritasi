@@ -1,6 +1,7 @@
 // Service Worker for Türkiye Deprem İzleme Haritası
-const CACHE_NAME = 'deprem-app-cache-v1';
-const API_CACHE_NAME = 'deprem-api-cache-v1';
+// Scope: Static application shell precaching only. No tile caching. No API data hoarding.
+
+const CACHE_NAME = 'deprem-shell-v2';
 
 const STATIC_PRECACHE = [
   '/',
@@ -14,7 +15,7 @@ const STATIC_PRECACHE = [
   '/icons/apple-touch-icon.png'
 ];
 
-// Install: Pre-cache core shell
+// Install: Pre-cache core application shell
 self.addEventListener('install', (event) => {
   event.waitUntil(
     caches.open(CACHE_NAME).then((cache) => {
@@ -29,7 +30,7 @@ self.addEventListener('activate', (event) => {
     caches.keys().then((keys) => {
       return Promise.all(
         keys.map((key) => {
-          if (key !== CACHE_NAME && key !== API_CACHE_NAME) {
+          if (key !== CACHE_NAME) {
             return caches.delete(key);
           }
         })
@@ -41,75 +42,57 @@ self.addEventListener('activate', (event) => {
 // Fetch strategy
 self.addEventListener('fetch', (event) => {
   const { request } = event;
-  const url = new URL(request.url);
 
   // Ignore non-GET requests
   if (request.method !== 'GET') return;
 
-  // 1. API Calls (/api/v1/...): Network-First with Cache-Fallback
-  if (url.pathname.startsWith('/api/')) {
-    event.respondWith(
-      fetch(request)
-        .then((response) => {
-          // If valid response, clone and update API cache
-          if (response && response.status === 200) {
-            const clone = response.clone();
-            caches.open(API_CACHE_NAME).then((cache) => {
-              cache.put(request, clone);
-            });
-          }
-          return response;
-        })
-        .catch(async () => {
-          // Network failed (offline) -> Serve cached API response if available
-          const cached = await caches.match(request);
-          if (cached) {
-            return cached;
-          }
-          // Return structured offline JSON response if neither worked
-          return new Response(
-            JSON.stringify({
-              error: 'offline',
-              detail: 'İnternet bağlantısı kurulamadı. Çevrimdışı moddasınız.',
-              items: []
-            }),
-            {
-              status: 503,
-              headers: { 'Content-Type': 'application/json' }
-            }
-          );
-        })
-    );
+  const url = new URL(request.url);
+
+  // 1. External origins (map vector tiles, CDNs): bypass service worker completely
+  if (url.origin !== self.location.origin) {
     return;
   }
 
-  // 2. Navigation requests: Network-First fallback to cached /index.html
+  // 2. API Calls (/api/...): Never cache data in Service Worker per project specification
+  // Let network fetch directly so genuine network/offline errors trigger application error states
+  if (url.pathname.startsWith('/api/')) {
+    return;
+  }
+
+  // 3. Navigation requests: Network-First fallback to cached /index.html
   if (request.mode === 'navigate') {
     event.respondWith(
       fetch(request).catch(async () => {
         const cachedIndex = await caches.match('/index.html');
-        return cachedIndex || caches.match('/');
+        return cachedIndex || (await caches.match('/')) || Response.error();
       })
     );
     return;
   }
 
-  // 3. Static assets (JS, CSS, fonts, images): Stale-While-Revalidate
+  // 4. Same-origin static shell assets: Cache-First with Network fallback
   event.respondWith(
-    caches.match(request).then((cachedResponse) => {
-      const fetchPromise = fetch(request)
-        .then((networkResponse) => {
-          if (networkResponse && networkResponse.status === 200) {
-            const clone = networkResponse.clone();
-            caches.open(CACHE_NAME).then((cache) => {
-              cache.put(request, clone);
-            });
-          }
-          return networkResponse;
-        })
-        .catch(() => null);
-
-      return cachedResponse || fetchPromise;
+    caches.match(request).then(async (cachedResponse) => {
+      if (cachedResponse) {
+        return cachedResponse;
+      }
+      try {
+        const networkResponse = await fetch(request);
+        if (networkResponse && networkResponse.status === 200) {
+          const clone = networkResponse.clone();
+          caches.open(CACHE_NAME).then((cache) => {
+            cache.put(request, clone);
+          });
+        }
+        return networkResponse;
+      } catch (err) {
+        // Return a proper offline Response instead of null
+        return new Response('Network offline and asset not cached', {
+          status: 503,
+          statusText: 'Service Unavailable',
+          headers: { 'Content-Type': 'text/plain' }
+        });
+      }
     })
   );
 });

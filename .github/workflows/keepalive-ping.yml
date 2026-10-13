@@ -1,0 +1,35 @@
+name: Render Keep-Alive Ping
+
+on:
+  schedule:
+    # Run every 10 minutes to prevent Render free instance from sleeping
+    - cron: '*/10 * * * *'
+  workflow_dispatch:
+
+jobs:
+  ping:
+    name: Ping Render Instance
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Ping Health Endpoint
+        env:
+          APP_URL: ${{ secrets.RENDER_APP_URL }}
+        run: |
+          if [ -z "$APP_URL" ]; then
+            echo "RENDER_APP_URL secret is not set. Add your Render service URL in GitHub Secrets to enable automatic keep-alive."
+            exit 0
+          fi
+
+          TARGET_URL="${APP_URL%/}/actuator/health"
+          echo "Pinging $TARGET_URL to keep service active..."
+          STATUS=$(curl -s -o /dev/null -w "%{http_code}" --max-time 15 "$TARGET_URL" || true)
+
+          if [ "$STATUS" = "200" ]; then
+            echo "Keep-alive ping succeeded (HTTP 200)."
+          else
+            echo "Keep-alive ping received HTTP $STATUS, retrying on /api/v1/status..."
+            ALT_URL="${APP_URL%/}/api/v1/status"
+            curl -s -f --max-time 15 "$ALT_URL" > /dev/null || true
+            echo "Fallback ping completed."
+          fi

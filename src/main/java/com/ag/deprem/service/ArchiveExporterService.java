@@ -48,6 +48,8 @@ public class ArchiveExporterService {
         this.archiveDirectory = archiveDirectory;
     }
 
+    private static final java.util.regex.Pattern SAFE_VERSION_PATTERN = java.util.regex.Pattern.compile("^[a-zA-Z0-9_-]{1,64}$");
+
     /**
      * Exports an archive shard for the specified time interval, calculates SHA-256 checksum,
      * persists manifest metadata to the database, and writes shard JSON to disk.
@@ -57,9 +59,7 @@ public class ArchiveExporterService {
         if (start == null || end == null || !start.isBefore(end)) {
             throw new IllegalArgumentException("Parameter 'start' must be strictly before 'end'");
         }
-        if (archiveVersion == null || archiveVersion.isBlank()) {
-            throw new IllegalArgumentException("Parameter 'archiveVersion' cannot be blank");
-        }
+        validateArchiveVersion(archiveVersion);
 
         log.info("Exporting archive shard '{}' for interval [{} to {}]", archiveVersion, start, end);
 
@@ -82,8 +82,14 @@ public class ArchiveExporterService {
 
         try {
             // Ensure archive directory exists
-            Path dirPath = Paths.get(archiveDirectory);
+            Path dirPath = Paths.get(archiveDirectory).toAbsolutePath().normalize();
             Files.createDirectories(dirPath);
+
+            // Path traversal protection
+            Path shardFilePath = dirPath.resolve(archiveVersion + ".json").normalize();
+            if (!shardFilePath.startsWith(dirPath)) {
+                throw new SecurityException("Archive path escapes destination directory: " + archiveVersion);
+            }
 
             // Serialize to JSON bytes
             byte[] jsonBytes = objectMapper.writerWithDefaultPrettyPrinter().writeValueAsBytes(shardDto);
@@ -92,7 +98,6 @@ public class ArchiveExporterService {
             String checksum = computeSha256(jsonBytes);
 
             // Write shard file to disk
-            Path shardFilePath = dirPath.resolve(archiveVersion + ".json");
             Files.write(shardFilePath, jsonBytes);
             log.info("Written archive shard file: {} (size: {} bytes, records: {})",
                     shardFilePath.toAbsolutePath(), jsonBytes.length, items.size());
@@ -112,8 +117,16 @@ public class ArchiveExporterService {
             manifest.setChecksum(checksum);
             manifest.setSchemaVersion(SCHEMA_VERSION);
             manifest.setSourceCoverage(SOURCE_COVERAGE);
-            manifest.setVerified(true);
+            manifest.setVerified(false);
 
+            manifest = manifestRepository.save(manifest);
+
+            // Explicitly verify the written file on disk before marking verified
+            boolean isVerified = verifyArchive(archiveVersion);
+            if (!isVerified) {
+                throw new IllegalStateException("Immediate archive verification failed for version: " + archiveVersion);
+            }
+            manifest.setVerified(true);
             manifest = manifestRepository.save(manifest);
 
             // Update master manifest.json index file in archive directory
@@ -125,6 +138,15 @@ public class ArchiveExporterService {
         } catch (IOException | NoSuchAlgorithmException e) {
             log.error("Failed to export archive shard '{}': {}", archiveVersion, e.getMessage(), e);
             throw new RuntimeException("Arşiv dışa aktarma başarısız: " + e.getMessage(), e);
+        }
+    }
+
+    public static void validateArchiveVersion(String archiveVersion) {
+        if (archiveVersion == null || archiveVersion.isBlank()) {
+            throw new IllegalArgumentException("Parameter 'archiveVersion' cannot be blank");
+        }
+        if (!SAFE_VERSION_PATTERN.matcher(archiveVersion.trim()).matches()) {
+            throw new IllegalArgumentException("Invalid archiveVersion format. Allowed characters: alphanumeric, underscore, hyphen (1-64 chars)");
         }
     }
 

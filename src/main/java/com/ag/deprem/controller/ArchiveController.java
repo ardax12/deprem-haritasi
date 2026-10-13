@@ -38,6 +38,7 @@ public class ArchiveController {
      */
     @GetMapping("/manifests/{archiveVersion}")
     public ResponseEntity<ArchiveManifestDto> getManifest(@PathVariable("archiveVersion") String archiveVersion) {
+        ArchiveExporterService.validateArchiveVersion(archiveVersion);
         return archiveExporterService.getManifest(archiveVersion)
                 .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
@@ -48,6 +49,7 @@ public class ArchiveController {
      */
     @PostMapping("/verify/{archiveVersion}")
     public ResponseEntity<Map<String, Object>> verifyArchive(@PathVariable("archiveVersion") String archiveVersion) {
+        ArchiveExporterService.validateArchiveVersion(archiveVersion);
         boolean verified = archiveExporterService.verifyArchive(archiveVersion);
         return ResponseEntity.ok(Map.of(
                 "archiveVersion", archiveVersion,

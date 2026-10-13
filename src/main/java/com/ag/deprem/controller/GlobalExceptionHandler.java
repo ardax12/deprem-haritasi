@@ -1,11 +1,15 @@
 package com.ag.deprem.controller;
 
+import com.ag.deprem.service.AfadApiClient;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ProblemDetail;
+import org.springframework.http.converter.HttpMessageNotReadableException;
+import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 
 import java.net.URI;
 import java.util.NoSuchElementException;
@@ -22,6 +26,53 @@ public class GlobalExceptionHandler {
         ProblemDetail problem = ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST, e.getMessage());
         problem.setTitle("Geçersiz Parametre");
         problem.setType(URI.create("urn:deprem:bad-request"));
+        return problem;
+    }
+
+    @ExceptionHandler(MethodArgumentTypeMismatchException.class)
+    public ProblemDetail handleTypeMismatch(MethodArgumentTypeMismatchException e) {
+        String detail = String.format("'%s' parametresi için geçersiz değer: '%s'", e.getName(), e.getValue());
+        log.warn("Parameter type mismatch: {}", detail);
+        ProblemDetail problem = ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST, detail);
+        problem.setTitle("Parametre Tipi Uyuşmazlığı");
+        problem.setType(URI.create("urn:deprem:bad-request-type"));
+        return problem;
+    }
+
+    @ExceptionHandler(MissingServletRequestParameterException.class)
+    public ProblemDetail handleMissingParam(MissingServletRequestParameterException e) {
+        String detail = String.format("Zorunlu parametre eksik: '%s'", e.getParameterName());
+        log.warn("Missing parameter: {}", detail);
+        ProblemDetail problem = ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST, detail);
+        problem.setTitle("Eksik Parametre");
+        problem.setType(URI.create("urn:deprem:missing-parameter"));
+        return problem;
+    }
+
+    @ExceptionHandler(HttpMessageNotReadableException.class)
+    public ProblemDetail handleNotReadable(HttpMessageNotReadableException e) {
+        log.warn("Malformed HTTP request body: {}", e.getMessage());
+        ProblemDetail problem = ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST, "İstek gövdesi okunamadı veya biçimi hatalı.");
+        problem.setTitle("Hatalı İstek Gövdesi");
+        problem.setType(URI.create("urn:deprem:bad-request-body"));
+        return problem;
+    }
+
+    @ExceptionHandler(SecurityException.class)
+    public ProblemDetail handleSecurityException(SecurityException e) {
+        log.warn("Security violation: {}", e.getMessage());
+        ProblemDetail problem = ProblemDetail.forStatusAndDetail(HttpStatus.FORBIDDEN, e.getMessage());
+        problem.setTitle("Erişim Engellendi");
+        problem.setType(URI.create("urn:deprem:forbidden"));
+        return problem;
+    }
+
+    @ExceptionHandler(AfadApiClient.AfadApiException.class)
+    public ProblemDetail handleAfadOutage(AfadApiClient.AfadApiException e) {
+        log.error("AFAD service outage: {}", e.getMessage());
+        ProblemDetail problem = ProblemDetail.forStatusAndDetail(HttpStatus.SERVICE_UNAVAILABLE, "AFAD veri kaynağına şu anda ulaşılamıyor. Lütfen daha sonra tekrar deneyin.");
+        problem.setTitle("Kaynak Servis Kesintisi");
+        problem.setType(URI.create("urn:deprem:upstream-outage"));
         return problem;
     }
 

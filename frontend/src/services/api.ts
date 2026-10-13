@@ -2,21 +2,40 @@ import type { EarthquakesResponse, EarthquakeDetail, SystemStatus, FilterParams 
 
 const API_BASE = '/api/v1';
 
-export async function fetchEarthquakes(filters: FilterParams, page: number = 0, signal?: AbortSignal): Promise<EarthquakesResponse> {
+export interface TimeWindow {
+  start: string;
+  end: string;
+}
+
+export function computeTimeWindow(timeRange: FilterParams['timeRange']): TimeWindow {
   const now = new Date();
   let start = new Date(now.getTime() - 24 * 60 * 60 * 1000); // default 24h
 
-  if (filters.timeRange === '3d') {
+  if (timeRange === '3d') {
     start = new Date(now.getTime() - 3 * 24 * 60 * 60 * 1000);
-  } else if (filters.timeRange === '7d') {
+  } else if (timeRange === '7d') {
     start = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
-  } else if (filters.timeRange === '30d') {
+  } else if (timeRange === '30d') {
     start = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
   }
 
+  return {
+    start: start.toISOString(),
+    end: now.toISOString()
+  };
+}
+
+export async function fetchEarthquakes(
+  filters: FilterParams,
+  page: number = 0,
+  timeWindow?: TimeWindow,
+  signal?: AbortSignal
+): Promise<EarthquakesResponse> {
+  const window = timeWindow ?? computeTimeWindow(filters.timeRange);
+
   const query = new URLSearchParams();
-  query.set('start', start.toISOString());
-  query.set('end', now.toISOString());
+  query.set('start', window.start);
+  query.set('end', window.end);
   query.set('page', page.toString());
   query.set('pageSize', '500');
   query.set('sort', filters.sortBy);

@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useCallback } from 'react';
-import { Map, Popup, NavigationControl, ScaleControl, setWorkerUrl } from 'maplibre-gl';
+import { Map, Popup, NavigationControl, ScaleControl, AttributionControl, setWorkerUrl } from 'maplibre-gl';
 import type { StyleSpecification } from 'maplibre-gl';
 import maplibreWorkerUrl from 'maplibre-gl/dist/maplibre-gl-worker.mjs?url';
 import type { GeoJSONSource } from 'maplibre-gl';
@@ -53,8 +53,8 @@ export const EarthquakeMap: React.FC<EarthquakeMapProps> = ({
     }
 
     const magText = item.magnitude?.value !== null && item.magnitude?.value !== undefined
-      ? `${item.magnitude.value} ${item.magnitude?.type ?? ''}`
-      : 'Raporlanmadı';
+      ? `${item.magnitude.value} ${item.magnitude?.type ?? ''}`.trim()
+      : 'Bilinmiyor';
 
     const dateStr = new Date(item.occurredAt).toLocaleString('tr-TR', {
       day: 'numeric',
@@ -66,27 +66,85 @@ export const EarthquakeMap: React.FC<EarthquakeMapProps> = ({
 
     const loc = parseItemLocation(item);
 
+    // Build safe DOM tree without innerHTML injection
     const popupContent = document.createElement('div');
     popupContent.className = 'map-popup-card';
-    popupContent.innerHTML = `
-      <div class="popup-mag-badge">${magText}</div>
-      <div class="popup-title">${loc.displayTitle}</div>
-      ${loc.isOffshore && loc.nearestSettlement ? `<div class="popup-row"><span>En Yakın TR Kıyısı:</span> <strong>${loc.nearestSettlement} (${loc.distanceKm ?? '-'} km)</strong></div>` : ''}
-      <div class="popup-row"><span>Tarih:</span> <strong>${dateStr}</strong></div>
-      <div class="popup-row"><span>Derinlik:</span> <strong>${item.depthKm !== null ? item.depthKm + ' km' : 'Bilinmiyor'}</strong></div>
-      <div class="popup-row"><span>Kaynak:</span> <strong>${item.source}</strong></div>
-      <div class="popup-actions">
-        <button class="popup-btn-share" id="popup-btn-share" type="button" title="Deprem bağlantısını kopyala veya paylaş">🔗 Paylaş</button>
-        <button class="popup-btn-detail" id="popup-btn-more" type="button">Detaylar →</button>
-      </div>
-    `;
 
-    popupContent.querySelector('#popup-btn-more')?.addEventListener('click', () => {
+    const badge = document.createElement('div');
+    badge.className = 'popup-mag-badge';
+    badge.textContent = magText;
+    popupContent.appendChild(badge);
+
+    const title = document.createElement('div');
+    title.className = 'popup-title';
+    title.textContent = loc.displayTitle;
+    popupContent.appendChild(title);
+
+    if (loc.isOffshore && loc.nearestSettlement) {
+      const offshoreRow = document.createElement('div');
+      offshoreRow.className = 'popup-row';
+      const offshoreSpan = document.createElement('span');
+      offshoreSpan.textContent = 'En Yakın TR Kıyısı: ';
+      const offshoreStrong = document.createElement('strong');
+      offshoreStrong.textContent = `${loc.nearestSettlement} (${loc.distanceKm ?? '-'} km)`;
+      offshoreRow.appendChild(offshoreSpan);
+      offshoreRow.appendChild(offshoreStrong);
+      popupContent.appendChild(offshoreRow);
+    }
+
+    const dateRow = document.createElement('div');
+    dateRow.className = 'popup-row';
+    const dateSpan = document.createElement('span');
+    dateSpan.textContent = 'Tarih: ';
+    const dateStrong = document.createElement('strong');
+    dateStrong.textContent = dateStr;
+    dateRow.appendChild(dateSpan);
+    dateRow.appendChild(dateStrong);
+    popupContent.appendChild(dateRow);
+
+    const depthRow = document.createElement('div');
+    depthRow.className = 'popup-row';
+    const depthSpan = document.createElement('span');
+    depthSpan.textContent = 'Derinlik: ';
+    const depthStrong = document.createElement('strong');
+    depthStrong.textContent = item.depthKm !== null ? `${item.depthKm} km` : 'Bilinmiyor';
+    depthRow.appendChild(depthSpan);
+    depthRow.appendChild(depthStrong);
+    popupContent.appendChild(depthRow);
+
+    const srcRow = document.createElement('div');
+    srcRow.className = 'popup-row';
+    const srcSpan = document.createElement('span');
+    srcSpan.textContent = 'Kaynak: ';
+    const srcStrong = document.createElement('strong');
+    srcStrong.textContent = item.source || 'AFAD';
+    srcRow.appendChild(srcSpan);
+    srcRow.appendChild(srcStrong);
+    popupContent.appendChild(srcRow);
+
+    const actionsDiv = document.createElement('div');
+    actionsDiv.className = 'popup-actions';
+
+    const btnShare = document.createElement('button');
+    btnShare.className = 'popup-btn-share';
+    btnShare.type = 'button';
+    btnShare.title = 'Deprem bağlantısını kopyala veya paylaş';
+    btnShare.textContent = '🔗 Paylaş';
+
+    const btnDetail = document.createElement('button');
+    btnDetail.className = 'popup-btn-detail';
+    btnDetail.type = 'button';
+    btnDetail.textContent = 'Detaylar →';
+
+    actionsDiv.appendChild(btnShare);
+    actionsDiv.appendChild(btnDetail);
+    popupContent.appendChild(actionsDiv);
+
+    btnDetail.addEventListener('click', () => {
       onOpenDetailRef.current(item);
     });
 
-    popupContent.querySelector('#popup-btn-share')?.addEventListener('click', async (e) => {
-      const btn = e.currentTarget as HTMLButtonElement;
+    btnShare.addEventListener('click', async () => {
       const shareUrl = `${window.location.origin}${window.location.pathname}?event=${encodeURIComponent(item.id)}`;
       const magVal = item.magnitude?.value !== null && item.magnitude?.value !== undefined ? `M${item.magnitude.value}` : 'Deprem';
       const shareTitle = `${magVal} - ${loc.displayTitle}`;
@@ -103,10 +161,10 @@ export const EarthquakeMap: React.FC<EarthquakeMapProps> = ({
 
       try {
         await navigator.clipboard.writeText(shareUrl);
-        const originalText = btn.textContent;
-        btn.textContent = '✓ Kopyalandı';
+        const originalText = btnShare.textContent;
+        btnShare.textContent = '✓ Kopyalandı';
         setTimeout(() => {
-          btn.textContent = originalText;
+          btnShare.textContent = originalText;
         }, 2000);
       } catch (err) {
         console.warn('Bağlantı kopyalanamadı:', err);
@@ -130,9 +188,9 @@ export const EarthquakeMap: React.FC<EarthquakeMapProps> = ({
       properties: {
         id: item.id,
         magnitude: item.magnitude?.value ?? 0,
-        type: item.magnitude?.type ?? 'ML',
+        type: item.magnitude?.type ?? '',
         place: item.place ?? 'Bilinmeyen Konum',
-        depthKm: item.depthKm ?? 'Bilinmiyor',
+        depthKm: item.depthKm,
         occurredAt: item.occurredAt
       }
     }));
@@ -246,6 +304,7 @@ export const EarthquakeMap: React.FC<EarthquakeMapProps> = ({
       style: turkishDarkStyle,
       center: [35.2433, 38.9637], // Turkey center
       zoom: 5.5,
+      attributionControl: false,
       maxBounds: [
         [20.0, 32.0], // Southwest boundary
         [50.0, 45.0]  // Northeast boundary
@@ -254,6 +313,10 @@ export const EarthquakeMap: React.FC<EarthquakeMapProps> = ({
 
     map.addControl(new NavigationControl({ showCompass: true }), 'top-right');
     map.addControl(new ScaleControl({ unit: 'metric' }), 'bottom-left');
+    map.addControl(new AttributionControl({
+      compact: false,
+      customAttribution: '© <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a> | <a href="https://openfreemap.org" target="_blank" rel="noopener">OpenFreeMap</a>'
+    }), 'bottom-right');
 
     const handleLoaded = () => {
       applyTurkishLabels(map);

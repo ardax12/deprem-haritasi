@@ -10,12 +10,11 @@ jobs:
   backup:
     name: Backup and Encrypt Database
     runs-on: ubuntu-latest
-    if: github.repository_owner == 'ag' || github.event_name == 'workflow_dispatch'
 
     steps:
       - uses: actions/checkout@v4
 
-      - name: Install PostgreSQL Client
+      - name: Install PostgreSQL Client and GPG
         run: |
           sudo apt-get update
           sudo apt-get install -y postgresql-client gpg
@@ -26,8 +25,13 @@ jobs:
           BACKUP_PUBKEY: ${{ secrets.BACKUP_PUBLIC_KEY }}
         run: |
           if [ -z "$DB_URL" ]; then
-            echo "SUPABASE_DB_URL secret is not set, skipping dump."
-            exit 0
+            echo "::error::SUPABASE_DB_URL secret is not set. Skipping backup."
+            exit 1
+          fi
+
+          if [ -z "$BACKUP_PUBKEY" ]; then
+            echo "::error::BACKUP_PUBLIC_KEY secret is not set. Refusing to create or upload unencrypted dump."
+            exit 1
           fi
 
           BACKUP_DATE=$(date +'%Y%m%d_%H%M%S')
@@ -37,13 +41,16 @@ jobs:
           echo "Exporting database..."
           pg_dump "$DB_URL" --clean --if-exists --no-owner --no-privileges | gzip > "$DUMP_FILE"
 
-          if [ -n "$BACKUP_PUBKEY" ]; then
-            echo "$BACKUP_PUBKEY" | gpg --import
-            gpg --encrypt --trust-model always -r backup-recipient "$DUMP_FILE" -o "$ENC_FILE"
-            rm "$DUMP_FILE"
-          else
-            echo "WARNING: BACKUP_PUBLIC_KEY not set, encrypting with AES256 passphrase or aborting."
-            mv "$DUMP_FILE" "$ENC_FILE"
+          echo "Importing backup public key..."
+          echo "$BACKUP_PUBKEY" | gpg --import
+
+          echo "Encrypting dump file..."
+          gpg --encrypt --trust-model always -r backup-recipient "$DUMP_FILE" -o "$ENC_FILE"
+          rm -f "$DUMP_FILE"
+
+          if [ ! -f "$ENC_FILE" ]; then
+            echo "::error::Encryption failed. Target file does not exist."
+            exit 1
           fi
 
           echo "BACKUP_FILE=$ENC_FILE" >> $GITHUB_ENV

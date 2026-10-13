@@ -12,6 +12,8 @@ interface EarthquakeListProps {
   hasMore?: boolean;
   loadingMore?: boolean;
   onLoadMore?: () => void;
+  error?: string | null;
+  onRetry?: () => void;
 }
 
 export const EarthquakeList: React.FC<EarthquakeListProps> = ({
@@ -23,7 +25,9 @@ export const EarthquakeList: React.FC<EarthquakeListProps> = ({
   totalCount,
   hasMore,
   loadingMore,
-  onLoadMore
+  onLoadMore,
+  error,
+  onRetry
 }) => {
   const getMagClass = (val?: number | null) => {
     if (val === null || val === undefined) return 'mag-gray';
@@ -62,6 +66,28 @@ export const EarthquakeList: React.FC<EarthquakeListProps> = ({
     );
   }
 
+  if (error && items.length === 0) {
+    return (
+      <div className="list-wrapper">
+        <div className="list-empty list-error-state" aria-live="assertive" role="alert">
+          <span className="empty-icon">⚠️</span>
+          <h3>Bağlantı / Servis Hatası</h3>
+          <p>{error}</p>
+          {onRetry && (
+            <button
+              type="button"
+              className="btn-error-retry"
+              onClick={onRetry}
+              style={{ marginTop: '12px', padding: '8px 18px', borderRadius: '6px', background: '#2563eb', color: '#fff', border: 'none', cursor: 'pointer', fontWeight: 600 }}
+            >
+              Tekrar Dene
+            </button>
+          )}
+        </div>
+      </div>
+    );
+  }
+
   if (items.length === 0) {
     return (
       <div className="list-wrapper">
@@ -89,7 +115,7 @@ export const EarthquakeList: React.FC<EarthquakeListProps> = ({
         {items.map((item) => {
           const isSelected = selectedItem?.id === item.id;
           const magVal = item.magnitude?.value;
-          const magType = item.magnitude?.type ?? 'ML';
+          const magType = item.magnitude?.type ?? '';
           const loc = parseItemLocation(item);
 
           return (
@@ -110,7 +136,7 @@ export const EarthquakeList: React.FC<EarthquakeListProps> = ({
               <div className="card-top">
                 <div className={`mag-badge ${getMagClass(magVal)}`}>
                   <span className="mag-value">{magVal !== null && magVal !== undefined ? magVal.toFixed(1) : '-'}</span>
-                  <span className="mag-type">{magType}</span>
+                  {magType ? <span className="mag-type">{magType}</span> : null}
                 </div>
 
                 <div className="card-title-block">
@@ -125,21 +151,23 @@ export const EarthquakeList: React.FC<EarthquakeListProps> = ({
                 </div>
               </div>
 
-              <div className="card-bottom">
-                <div className="card-specs">
-                  <span className="spec-item">
-                    Derinlik: <strong>{item.depthKm !== null ? `${item.depthKm} km` : 'Bilinmiyor'}</strong>
-                  </span>
-                  <span className="spec-item">
-                    Kaynak: <strong>{item.source}</strong>
-                  </span>
-                  {item.revisionNumber > 1 && (
-                    <span className="badge-revision">
-                      Rev. {item.revisionNumber}
-                    </span>
-                  )}
-                </div>
+              <div className="card-details">
+                <span className="detail-item">
+                  Derinlik: <strong>{item.depthKm !== null ? `${item.depthKm} km` : 'Bilinmiyor'}</strong>
+                </span>
+                <span className="detail-dot">•</span>
+                <span className="detail-item">
+                  Kaynak: <strong>{item.source}</strong>
+                </span>
+                {item.revisionNumber > 1 && (
+                  <>
+                    <span className="detail-dot">•</span>
+                    <span className="detail-rev-badge">Revizyon #{item.revisionNumber}</span>
+                  </>
+                )}
+              </div>
 
+              <div className="card-bottom">
                 <button
                   type="button"
                   className="btn-card-detail"
@@ -147,41 +175,23 @@ export const EarthquakeList: React.FC<EarthquakeListProps> = ({
                     e.stopPropagation();
                     onOpenDetail(item);
                   }}
-                  title="Olay ve Revizyon Detaylarını Aç"
-                  aria-label={`${item.place || 'Olay'} detaylarını görüntüle`}
                 >
-                  Detay →
+                  Detayları Gör →
                 </button>
               </div>
-
-              {item.dataQuality && item.dataQuality.length > 0 && (
-                <div className="card-quality-warn">
-                  ⚠️ {item.dataQuality.join(', ')}
-                </div>
-              )}
             </article>
           );
         })}
 
         {hasMore && (
-          <div className="list-load-more-container">
+          <div className="list-load-more">
             <button
               type="button"
               className="btn-load-more"
               onClick={onLoadMore}
               disabled={loadingMore}
-              aria-label="Daha fazla deprem kaydı yükle"
             >
-              {loadingMore ? (
-                <>
-                  <span className="loader-spinner-sm" aria-hidden="true" />
-                  <span>Yükleniyor...</span>
-                </>
-              ) : (
-                <span>
-                  Daha Fazla Göster {totalCount ? `(${totalCount - items.length} deprem daha)` : ''} ↓
-                </span>
-              )}
+              {loadingMore ? 'Daha fazla yükleniyor...' : 'Daha Fazla Olay Yükle'}
             </button>
           </div>
         )}

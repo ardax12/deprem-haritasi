@@ -103,8 +103,7 @@ public class IngestionService {
 
                 if (latestRevOpt.isPresent() &&
                         latestRevOpt.get().getNormalizedHash().equals(dto.getNormalizedHash())) {
-                    // Content identical -> no new revision
-                    sourceReportRepository.save(report);
+                    // Content identical -> avoid heavy and redundant database UPDATE
                     summary.unchanged++;
                 } else {
                     // Content changed -> create new revision

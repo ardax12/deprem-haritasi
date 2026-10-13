@@ -19,8 +19,18 @@ import java.util.List;
 @Service
 public class AfadApiClient {
 
+    public static class AfadApiException extends RuntimeException {
+        public AfadApiException(String message) {
+            super(message);
+        }
+        public AfadApiException(String message, Throwable cause) {
+            super(message, cause);
+        }
+    }
+
     private static final Logger log = LoggerFactory.getLogger(AfadApiClient.class);
     private static final DateTimeFormatter AFAD_DATE_FORMAT = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss").withZone(ZoneOffset.UTC);
+    private static final int MAX_RETRIES = 3;
 
     private final RestClient restClient;
     private final String afadApiUrl;
@@ -49,23 +59,40 @@ public class AfadApiClient {
 
         log.info("Fetching AFAD events from '{}' to '{}'", startStr, endStr);
 
-        try {
-            List<AfadRawEventDto> events = restClient.get()
-                    .uri(afadApiUrl + "?start={start}&end={end}", startStr, endStr)
-                    .retrieve()
-                    .body(new ParameterizedTypeReference<List<AfadRawEventDto>>() {});
+        Exception lastException = null;
+        for (int attempt = 1; attempt <= MAX_RETRIES; attempt++) {
+            try {
+                List<AfadRawEventDto> events = restClient.get()
+                        .uri(afadApiUrl + "?start={start}&end={end}", startStr, endStr)
+                        .retrieve()
+                        .body(new ParameterizedTypeReference<List<AfadRawEventDto>>() {});
 
-            if (events == null) {
-                events = Collections.emptyList();
+                if (events == null) {
+                    events = Collections.emptyList();
+                }
+
+                statusTracker.recordSuccess(now);
+                log.info("Successfully fetched {} events from AFAD (attempt {})", events.size(), attempt);
+                return events;
+            } catch (Exception e) {
+                lastException = e;
+                log.warn("Attempt {}/{} failed to fetch from AFAD [{} to {}]: {}",
+                        attempt, MAX_RETRIES, startStr, endStr, e.getMessage());
+                if (attempt < MAX_RETRIES) {
+                    try {
+                        Thread.sleep(attempt * 1000L);
+                    } catch (InterruptedException ie) {
+                        Thread.currentThread().interrupt();
+                        break;
+                    }
+                }
             }
-
-            statusTracker.recordSuccess(now);
-            log.info("Successfully fetched {} events from AFAD", events.size());
-            return events;
-        } catch (Exception e) {
-            log.error("Failed to fetch events from AFAD: {}", e.getMessage());
-            statusTracker.recordFailure(now, e.getMessage());
-            return Collections.emptyList();
         }
+
+        String errorMsg = lastException != null ? lastException.getMessage() : "Unknown AFAD error";
+        statusTracker.recordFailure(now, errorMsg);
+        log.error("All {} attempts to fetch from AFAD failed for interval [{} to {}]: {}",
+                MAX_RETRIES, startStr, endStr, errorMsg);
+        throw new AfadApiException("AFAD API bağlantı hatası: " + errorMsg, lastException);
     }
 }

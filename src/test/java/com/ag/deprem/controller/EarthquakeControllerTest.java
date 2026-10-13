@@ -234,4 +234,29 @@ class EarthquakeControllerTest {
                 .andExpect(jsonPath("$.sources[0].name").value("AFAD"))
                 .andExpect(jsonPath("$.sources[0].status").exists());
     }
+
+    @Test
+    void testTypeMismatchReturns400() throws Exception {
+        mockMvc.perform(get("/api/v1/earthquakes")
+                        .param("minMagnitude", "abc"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.title").value("Parametre Tipi Uyuşmazlığı"));
+    }
+
+    @Test
+    void testMalformedDateReturns400() throws Exception {
+        mockMvc.perform(get("/api/v1/earthquakes")
+                        .param("start", "not-a-valid-date"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.title").value("Parametre Tipi Uyuşmazlığı"));
+    }
+
+    @Test
+    void testOverlongPlaceReturns400() throws Exception {
+        String longPlace = "A".repeat(105);
+        mockMvc.perform(get("/api/v1/earthquakes")
+                        .param("place", longPlace))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.title").value("Geçersiz Parametre"));
+    }
 }

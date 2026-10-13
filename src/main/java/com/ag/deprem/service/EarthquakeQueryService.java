@@ -185,7 +185,7 @@ public class EarthquakeQueryService {
         Instant lastAttempt = statusTracker.getLastAttemptAt();
         String freshness = statusTracker.getFreshnessStatus(now);
 
-        Instant coverageFrom = revisionRepository.findLatestOccurredAt().orElse(null);
+        Instant coverageFrom = revisionRepository.findEarliestOccurredAt().orElse(null);
 
         StatusResponseDto.CoverageDto coverage = new StatusResponseDto.CoverageDto(
                 coverageFrom,

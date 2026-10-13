@@ -37,9 +37,17 @@ public class EarthquakeController {
             @RequestParam(defaultValue = "100") int pageSize,
             @RequestParam(required = false) String sort) {
 
+        if (place != null && place.trim().length() > 100) {
+            throw new IllegalArgumentException("Parametre 'place' en fazla 100 karakter olabilir");
+        }
+        if (page < 0) {
+            throw new IllegalArgumentException("Parametre 'page' negatif olamaz");
+        }
+        int boundedPageSize = Math.min(Math.max(pageSize, 1), 500);
+
         EarthquakesListResponseDto response = queryService.queryEarthquakes(
                 start, end, minMagnitude, maxMagnitude, magnitudeType,
-                minDepthKm, maxDepthKm, bbox, place, page, pageSize, sort
+                minDepthKm, maxDepthKm, bbox, place, page, boundedPageSize, sort
         );
 
         return ResponseEntity.ok()

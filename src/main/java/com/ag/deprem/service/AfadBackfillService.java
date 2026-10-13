@@ -52,6 +52,7 @@ public class AfadBackfillService {
         int unchanged = 0;
         int rejected = 0;
         int chunksProcessed = 0;
+        int failedChunks = 0;
 
         Instant currentChunkStart = start;
         Duration chunkDuration = Duration.ofHours(chunkHours);
@@ -85,14 +86,20 @@ public class AfadBackfillService {
                     }
                 }
             } catch (Exception e) {
+                failedChunks++;
                 log.error("Error backfilling chunk [{} to {}]: {}", currentChunkStart, currentChunkEnd, e.getMessage(), e);
             }
 
             currentChunkStart = currentChunkEnd;
         }
 
-        log.info("AFAD backfill finished: processed {} chunks, {} events fetched (inserted: {}, updated: {}, unchanged: {}, rejected: {})",
-                chunksProcessed, totalFetched, inserted, updated, unchanged, rejected);
+        boolean success = failedChunks == 0;
+        String message = success
+                ? "Tarihsel katalog taraması başarıyla tamamlandı."
+                : String.format("Katalog taraması sırasında %d parça başarısız oldu.", failedChunks);
+
+        log.info("AFAD backfill finished: processed {} chunks (failed: {}), {} events fetched (inserted: {}, updated: {}, unchanged: {}, rejected: {})",
+                chunksProcessed, failedChunks, totalFetched, inserted, updated, unchanged, rejected);
 
         return new BackfillResultDto(
                 start,
@@ -103,8 +110,8 @@ public class AfadBackfillService {
                 unchanged,
                 rejected,
                 chunksProcessed,
-                true,
-                "Tarihsel katalog taraması başarıyla tamamlandı."
+                success,
+                message
         );
     }
 

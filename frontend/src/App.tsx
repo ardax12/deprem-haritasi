@@ -5,7 +5,7 @@ import { EarthquakeMap } from './components/EarthquakeMap';
 import { EarthquakeList } from './components/EarthquakeList';
 import { EarthquakeDetailModal } from './components/EarthquakeDetailModal';
 import type { EarthquakeItem, FilterParams, Freshness, PageInfo, EarthquakeDetail } from './types/earthquake';
-import { fetchEarthquakes, fetchEarthquakeDetail } from './services/api';
+import { fetchEarthquakes, fetchEarthquakeDetail, computeTimeWindow, type TimeWindow } from './services/api';
 import './App.css';
 
 const defaultFilters: FilterParams = {
@@ -31,6 +31,7 @@ export function App() {
 
   const activeRequestIdRef = useRef<number>(0);
   const deepLinkedItemRef = useRef<EarthquakeItem | null>(null);
+  const currentTimeWindowRef = useRef<TimeWindow>(computeTimeWindow(defaultFilters.timeRange));
 
   // Monitor network online/offline status
   useEffect(() => {
@@ -133,7 +134,10 @@ export function App() {
     setLoading(true);
     setError(null);
 
-    fetchEarthquakes(filters, 0, controller.signal)
+    const window = computeTimeWindow(filters.timeRange);
+    currentTimeWindowRef.current = window;
+
+    fetchEarthquakes(filters, 0, window, controller.signal)
       .then(response => {
         if (requestId === activeRequestIdRef.current) {
           const loadedItems = [...response.items];
@@ -166,7 +170,9 @@ export function App() {
     setError(null);
 
     try {
-      const response = await fetchEarthquakes(filters, 0, controller.signal);
+      const window = computeTimeWindow(filters.timeRange);
+      currentTimeWindowRef.current = window;
+      const response = await fetchEarthquakes(filters, 0, window, controller.signal);
       if (requestId === activeRequestIdRef.current) {
         const loadedItems = [...response.items];
         if (deepLinkedItemRef.current && !loadedItems.some(it => it.id === deepLinkedItemRef.current!.id)) {
@@ -217,7 +223,7 @@ export function App() {
 
     setLoadingMore(true);
     try {
-      const response = await fetchEarthquakes(filters, nextPage);
+      const response = await fetchEarthquakes(filters, nextPage, currentTimeWindowRef.current);
       setItems(prev => [...prev, ...response.items]);
       setPageInfo(response.page);
       setFreshness(response.freshness);
@@ -353,6 +359,8 @@ export function App() {
             hasMore={hasMore}
             loadingMore={loadingMore}
             onLoadMore={handleLoadMore}
+            error={error}
+            onRetry={refreshData}
           />
         </div>
       </main>
