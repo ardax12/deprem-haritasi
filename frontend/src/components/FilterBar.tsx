@@ -22,6 +22,7 @@ export const FilterBar: React.FC<FilterBarProps> = ({ filters, onChange, onReset
           <option value="24h">Son 24 Saat</option>
           <option value="3d">Son 3 Gün</option>
           <option value="7d">Son 7 Gün</option>
+          <option value="30d">Son 30 Gün (1 Ay)</option>
         </select>
       </div>
 
@@ -32,7 +33,7 @@ export const FilterBar: React.FC<FilterBarProps> = ({ filters, onChange, onReset
           className="filter-select"
           value={filters.minMagnitude ?? ''}
           onChange={(e) => {
-            const val = e.target.value ? parseFloat(e.target.value) : null;
+            const val = e.target.value !== '' ? parseFloat(e.target.value) : null;
             onChange({ minMagnitude: val });
           }}
         >
@@ -52,9 +53,10 @@ export const FilterBar: React.FC<FilterBarProps> = ({ filters, onChange, onReset
           value={filters.magnitudeType}
           onChange={(e) => onChange({ magnitudeType: e.target.value })}
         >
-          <option value="ALL">Tümü (ML, Mw, vb.)</option>
+          <option value="ALL">Tümü (ML, Mw, MD)</option>
           <option value="ML">ML (Yerel)</option>
           <option value="Mw">Mw (Moment)</option>
+          <option value="MD">MD (Süreye Bağlı)</option>
         </select>
       </div>
 

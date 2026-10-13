@@ -10,20 +10,22 @@ export async function fetchEarthquakes(filters: FilterParams, page: number = 0):
     start = new Date(now.getTime() - 3 * 24 * 60 * 60 * 1000);
   } else if (filters.timeRange === '7d') {
     start = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+  } else if (filters.timeRange === '30d') {
+    start = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
   }
 
   const query = new URLSearchParams();
   query.set('start', start.toISOString());
   query.set('end', now.toISOString());
   query.set('page', page.toString());
-  query.set('pageSize', '150');
+  query.set('pageSize', '500');
   query.set('sort', filters.sortBy);
 
-  if (filters.minMagnitude !== null && filters.minMagnitude > 0) {
+  if (filters.minMagnitude !== null && filters.minMagnitude !== undefined && filters.minMagnitude > 0) {
     query.set('minMagnitude', filters.minMagnitude.toString());
   }
   if (filters.magnitudeType && filters.magnitudeType !== 'ALL') {
-    query.set('magnitudeType', filters.magnitudeType);
+    query.set('magnitudeType', filters.magnitudeType.trim());
   }
   if (filters.place && filters.place.trim().length > 0) {
     query.set('place', filters.place.trim());
