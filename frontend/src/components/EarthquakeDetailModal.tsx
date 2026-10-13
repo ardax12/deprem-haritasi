@@ -12,10 +12,60 @@ export const EarthquakeDetailModal: React.FC<EarthquakeDetailModalProps> = ({ it
   const [detail, setDetail] = useState<EarthquakeDetail | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
+  const [copied, setCopied] = useState<boolean>(false);
 
   const modalRef = useRef<HTMLDivElement>(null);
   const closeBtnRef = useRef<HTMLButtonElement>(null);
   const previousFocusRef = useRef<HTMLElement | null>(null);
+
+  const activeItem = detail ? detail.current : item;
+  const parsedLoc = activeItem ? parseItemLocation(activeItem) : null;
+
+  const formatDate = (isoStr?: string | null) => {
+    if (!isoStr) return '-';
+    try {
+      const date = new Date(isoStr);
+      return date.toLocaleString('tr-TR', {
+        day: 'numeric',
+        month: 'long',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit'
+      }) + ' TSİ';
+    } catch {
+      return isoStr;
+    }
+  };
+
+  const handleShare = async () => {
+    if (!item || !activeItem || !parsedLoc) return;
+    const shareUrl = `${window.location.origin}${window.location.pathname}?event=${encodeURIComponent(item.id)}`;
+    const magVal = activeItem?.magnitude?.value !== null && activeItem?.magnitude?.value !== undefined ? `M${activeItem.magnitude.value}` : 'Deprem';
+    const shareTitle = `${magVal} - ${parsedLoc.displayTitle}`;
+    const shareText = `${parsedLoc.displayTitle} bölgesinde ${magVal} büyüklüğünde deprem (${formatDate(activeItem?.occurredAt)}). AFAD verisiyle inceleyin:`;
+
+    if (typeof navigator !== 'undefined' && navigator.share) {
+      try {
+        await navigator.share({
+          title: shareTitle,
+          text: shareText,
+          url: shareUrl
+        });
+        return;
+      } catch (err: any) {
+        if (err.name === 'AbortError') return;
+      }
+    }
+
+    try {
+      await navigator.clipboard.writeText(shareUrl);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2500);
+    } catch (err) {
+      console.warn('Bağlantı panoya kopyalanamadı:', err);
+    }
+  };
 
   useEffect(() => {
     if (!item) return;
@@ -84,27 +134,7 @@ export const EarthquakeDetailModal: React.FC<EarthquakeDetailModalProps> = ({ it
     };
   }, [item, onClose]);
 
-  if (!item) return null;
-
-  const formatDate = (isoStr?: string | null) => {
-    if (!isoStr) return '-';
-    try {
-      const date = new Date(isoStr);
-      return date.toLocaleString('tr-TR', {
-        day: 'numeric',
-        month: 'long',
-        year: 'numeric',
-        hour: '2-digit',
-        minute: '2-digit',
-        second: '2-digit'
-      }) + ' TSİ';
-    } catch {
-      return isoStr;
-    }
-  };
-
-  const activeItem = detail ? detail.current : item;
-  const parsedLoc = parseItemLocation(activeItem);
+  if (!item || !parsedLoc) return null;
 
   return (
     <div className="modal-backdrop" onClick={onClose} role="dialog" aria-modal="true" aria-labelledby="modal-title">
@@ -125,7 +155,18 @@ export const EarthquakeDetailModal: React.FC<EarthquakeDetailModalProps> = ({ it
               {parsedLoc.displayTitle}
             </h2>
           </div>
-          <button ref={closeBtnRef} className="btn-modal-close" onClick={onClose} aria-label="Pencereyi Kapat">✕</button>
+          <div className="modal-header-actions">
+            <button
+              type="button"
+              className={`btn-modal-share ${copied ? 'copied' : ''}`}
+              onClick={handleShare}
+              title="Deprem bağlantısını kopyala veya paylaş"
+              aria-label="Deprem bağlantısını paylaş"
+            >
+              {copied ? '✓ Kopyalandı' : '🔗 Paylaş'}
+            </button>
+            <button ref={closeBtnRef} className="btn-modal-close" onClick={onClose} aria-label="Pencereyi Kapat">✕</button>
+          </div>
         </div>
 
         <div className="modal-body">
@@ -309,7 +350,15 @@ export const EarthquakeDetailModal: React.FC<EarthquakeDetailModalProps> = ({ it
         </div>
 
         <div className="modal-footer">
-          <button className="btn-modal-primary" onClick={onClose}>Tamam</button>
+          <button
+            type="button"
+            className="btn-modal-share-secondary"
+            onClick={handleShare}
+            aria-label="Deprem bağlantısını kopyala veya paylaş"
+          >
+            {copied ? '✓ Bağlantı Kopyalandı' : '🔗 Bağlantıyı Paylaş'}
+          </button>
+          <button type="button" className="btn-modal-primary" onClick={onClose}>Tamam</button>
         </div>
       </div>
     </div>

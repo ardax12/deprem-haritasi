@@ -29,6 +29,9 @@ export const EarthquakeMap: React.FC<EarthquakeMapProps> = ({
   const mapRef = useRef<Map | null>(null);
   const popupRef = useRef<Popup | null>(null);
 
+  const selectedItemRef = useRef<EarthquakeItem | null>(selectedItem);
+  selectedItemRef.current = selectedItem;
+
   const itemsRef = useRef<EarthquakeItem[]>(items);
   itemsRef.current = items;
 
@@ -37,6 +40,84 @@ export const EarthquakeMap: React.FC<EarthquakeMapProps> = ({
 
   const onOpenDetailRef = useRef(onOpenDetail);
   onOpenDetailRef.current = onOpenDetail;
+
+  const displayPopup = useCallback((item: EarthquakeItem, mapInstance: Map) => {
+    mapInstance.flyTo({
+      center: [item.longitude, item.latitude],
+      zoom: Math.max(mapInstance.getZoom(), 7.5),
+      essential: true
+    });
+
+    if (popupRef.current) {
+      popupRef.current.remove();
+    }
+
+    const magText = item.magnitude?.value !== null && item.magnitude?.value !== undefined
+      ? `${item.magnitude.value} ${item.magnitude?.type ?? ''}`
+      : 'Raporlanmadı';
+
+    const dateStr = new Date(item.occurredAt).toLocaleString('tr-TR', {
+      day: 'numeric',
+      month: 'short',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    }) + ' TSİ';
+
+    const loc = parseItemLocation(item);
+
+    const popupContent = document.createElement('div');
+    popupContent.className = 'map-popup-card';
+    popupContent.innerHTML = `
+      <div class="popup-mag-badge">${magText}</div>
+      <div class="popup-title">${loc.displayTitle}</div>
+      ${loc.isOffshore && loc.nearestSettlement ? `<div class="popup-row"><span>En Yakın TR Kıyısı:</span> <strong>${loc.nearestSettlement} (${loc.distanceKm ?? '-'} km)</strong></div>` : ''}
+      <div class="popup-row"><span>Tarih:</span> <strong>${dateStr}</strong></div>
+      <div class="popup-row"><span>Derinlik:</span> <strong>${item.depthKm !== null ? item.depthKm + ' km' : 'Bilinmiyor'}</strong></div>
+      <div class="popup-row"><span>Kaynak:</span> <strong>${item.source}</strong></div>
+      <div class="popup-actions">
+        <button class="popup-btn-share" id="popup-btn-share" type="button" title="Deprem bağlantısını kopyala veya paylaş">🔗 Paylaş</button>
+        <button class="popup-btn-detail" id="popup-btn-more" type="button">Detaylar →</button>
+      </div>
+    `;
+
+    popupContent.querySelector('#popup-btn-more')?.addEventListener('click', () => {
+      onOpenDetailRef.current(item);
+    });
+
+    popupContent.querySelector('#popup-btn-share')?.addEventListener('click', async (e) => {
+      const btn = e.currentTarget as HTMLButtonElement;
+      const shareUrl = `${window.location.origin}${window.location.pathname}?event=${encodeURIComponent(item.id)}`;
+      const magVal = item.magnitude?.value !== null && item.magnitude?.value !== undefined ? `M${item.magnitude.value}` : 'Deprem';
+      const shareTitle = `${magVal} - ${loc.displayTitle}`;
+      const shareText = `${loc.displayTitle} - ${magVal} deprem (${dateStr}). AFAD verisiyle inceleyin:`;
+
+      if (typeof navigator !== 'undefined' && navigator.share) {
+        try {
+          await navigator.share({ title: shareTitle, text: shareText, url: shareUrl });
+          return;
+        } catch (err: any) {
+          if (err.name === 'AbortError') return;
+        }
+      }
+
+      try {
+        await navigator.clipboard.writeText(shareUrl);
+        const originalText = btn.textContent;
+        btn.textContent = '✓ Kopyalandı';
+        setTimeout(() => {
+          btn.textContent = originalText;
+        }, 2000);
+      } catch (err) {
+        console.warn('Bağlantı kopyalanamadı:', err);
+      }
+    });
+
+    popupRef.current = new Popup({ offset: 15, closeButton: true })
+      .setLngLat([item.longitude, item.latitude])
+      .setDOMContent(popupContent)
+      .addTo(mapInstance);
+  }, []);
 
   // Build GeoJSON collection
   const getGeoJSONCollection = useCallback((): FeatureCollection<Point> => {
@@ -177,6 +258,9 @@ export const EarthquakeMap: React.FC<EarthquakeMapProps> = ({
     const handleLoaded = () => {
       applyTurkishLabels(map);
       ensureEarthquakeLayers(map);
+      if (selectedItemRef.current) {
+        displayPopup(selectedItemRef.current, map);
+      }
     };
 
     map.on('load', handleLoaded);
@@ -208,7 +292,7 @@ export const EarthquakeMap: React.FC<EarthquakeMapProps> = ({
     return () => {
       map.remove();
     };
-  }, [applyTurkishLabels, ensureEarthquakeLayers]);
+  }, [applyTurkishLabels, ensureEarthquakeLayers, displayPopup]);
 
   // Update GeoJSON data when items change
   useEffect(() => {
@@ -227,52 +311,8 @@ export const EarthquakeMap: React.FC<EarthquakeMapProps> = ({
   useEffect(() => {
     const map = mapRef.current;
     if (!map || !selectedItem) return;
-
-    map.flyTo({
-      center: [selectedItem.longitude, selectedItem.latitude],
-      zoom: Math.max(map.getZoom(), 7.5),
-      essential: true
-    });
-
-    if (popupRef.current) {
-      popupRef.current.remove();
-    }
-
-    const magText = selectedItem.magnitude?.value
-      ? `${selectedItem.magnitude.value} ${selectedItem.magnitude.type ?? ''}`
-      : 'Raporlanmadı';
-
-    const dateStr = new Date(selectedItem.occurredAt).toLocaleString('tr-TR', {
-      day: 'numeric',
-      month: 'short',
-      year: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
-    }) + ' TSİ';
-
-    const loc = parseItemLocation(selectedItem);
-
-    const popupContent = document.createElement('div');
-    popupContent.className = 'map-popup-card';
-    popupContent.innerHTML = `
-      <div class="popup-mag-badge">${magText}</div>
-      <div class="popup-title">${loc.displayTitle}</div>
-      ${loc.isOffshore && loc.nearestSettlement ? `<div class="popup-row"><span>En Yakın TR Kıyısı:</span> <strong>${loc.nearestSettlement} (${loc.distanceKm ?? '-'} km)</strong></div>` : ''}
-      <div class="popup-row"><span>Tarih:</span> <strong>${dateStr}</strong></div>
-      <div class="popup-row"><span>Derinlik:</span> <strong>${selectedItem.depthKm !== null ? selectedItem.depthKm + ' km' : 'Bilinmiyor'}</strong></div>
-      <div class="popup-row"><span>Kaynak:</span> <strong>${selectedItem.source}</strong></div>
-      <button class="popup-btn-detail" id="popup-btn-more">Detayları İncele →</button>
-    `;
-
-    popupContent.querySelector('#popup-btn-more')?.addEventListener('click', () => {
-      onOpenDetailRef.current(selectedItem);
-    });
-
-    popupRef.current = new Popup({ offset: 15, closeButton: true })
-      .setLngLat([selectedItem.longitude, selectedItem.latitude])
-      .setDOMContent(popupContent)
-      .addTo(map);
-  }, [selectedItem]);
+    displayPopup(selectedItem, map);
+  }, [selectedItem, displayPopup]);
 
   return (
     <div className="map-wrapper" aria-label="Deprem Haritası">

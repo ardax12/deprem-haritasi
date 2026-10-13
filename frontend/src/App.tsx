@@ -4,8 +4,8 @@ import { FilterBar } from './components/FilterBar';
 import { EarthquakeMap } from './components/EarthquakeMap';
 import { EarthquakeList } from './components/EarthquakeList';
 import { EarthquakeDetailModal } from './components/EarthquakeDetailModal';
-import type { EarthquakeItem, FilterParams, Freshness, PageInfo } from './types/earthquake';
-import { fetchEarthquakes } from './services/api';
+import type { EarthquakeItem, FilterParams, Freshness, PageInfo, EarthquakeDetail } from './types/earthquake';
+import { fetchEarthquakes, fetchEarthquakeDetail } from './services/api';
 import './App.css';
 
 const defaultFilters: FilterParams = {
@@ -28,6 +28,54 @@ export function App() {
   const [activeTab, setActiveTab] = useState<'map' | 'list'>('map');
 
   const activeRequestIdRef = useRef<number>(0);
+  const deepLinkedItemRef = useRef<EarthquakeItem | null>(null);
+
+  // Deep-link initial check: if URL contains ?event=<id>, fetch its details immediately
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const eventId = params.get('event');
+    if (!eventId) return;
+
+    fetchEarthquakeDetail(eventId)
+      .then((res: EarthquakeDetail) => {
+        deepLinkedItemRef.current = res.current;
+        setItems(prev => (prev.some(it => it.id === res.current.id) ? prev : [res.current, ...prev]));
+        setSelectedItem(res.current);
+        setModalItem(res.current);
+      })
+      .catch((err: any) => {
+        console.warn('Derin bağlantı deprem verisi alınamadı:', err);
+      });
+  }, []);
+
+  // Listen to browser Back/Forward (popstate)
+  useEffect(() => {
+    const handlePopState = () => {
+      const params = new URLSearchParams(window.location.search);
+      const eventId = params.get('event');
+      if (!eventId) {
+        setModalItem(null);
+      } else {
+        const found = items.find(it => it.id === eventId);
+        if (found) {
+          setSelectedItem(found);
+          setModalItem(found);
+        } else {
+          fetchEarthquakeDetail(eventId)
+            .then((res: EarthquakeDetail) => {
+              deepLinkedItemRef.current = res.current;
+              setItems(prev => (prev.some(it => it.id === res.current.id) ? prev : [res.current, ...prev]));
+              setSelectedItem(res.current);
+              setModalItem(res.current);
+            })
+            .catch(() => {});
+        }
+      }
+    };
+
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, [items]);
 
   // Fetch first page whenever filters change, cancelling previous in-flight requests
   useEffect(() => {
@@ -39,7 +87,11 @@ export function App() {
     fetchEarthquakes(filters, 0, controller.signal)
       .then(response => {
         if (requestId === activeRequestIdRef.current) {
-          setItems(response.items);
+          const loadedItems = [...response.items];
+          if (deepLinkedItemRef.current && !loadedItems.some(it => it.id === deepLinkedItemRef.current!.id)) {
+            loadedItems.unshift(deepLinkedItemRef.current);
+          }
+          setItems(loadedItems);
           setPageInfo(response.page);
           setFreshness(response.freshness);
           setLoading(false);
@@ -67,7 +119,11 @@ export function App() {
     try {
       const response = await fetchEarthquakes(filters, 0, controller.signal);
       if (requestId === activeRequestIdRef.current) {
-        setItems(response.items);
+        const loadedItems = [...response.items];
+        if (deepLinkedItemRef.current && !loadedItems.some(it => it.id === deepLinkedItemRef.current!.id)) {
+          loadedItems.unshift(deepLinkedItemRef.current);
+        }
+        setItems(loadedItems);
         setPageInfo(response.page);
         setFreshness(response.freshness);
       }
@@ -136,7 +192,22 @@ export function App() {
   };
 
   const handleOpenDetail = (item: EarthquakeItem) => {
+    setSelectedItem(item);
     setModalItem(item);
+    const url = new URL(window.location.href);
+    if (url.searchParams.get('event') !== item.id) {
+      url.searchParams.set('event', item.id);
+      window.history.pushState({ eventId: item.id }, '', url.toString());
+    }
+  };
+
+  const handleCloseModal = () => {
+    setModalItem(null);
+    const url = new URL(window.location.href);
+    if (url.searchParams.has('event')) {
+      url.searchParams.delete('event');
+      window.history.pushState({}, '', url.toString());
+    }
   };
 
   const totalCount = pageInfo ? pageInfo.totalElements : items.length;
@@ -229,7 +300,7 @@ export function App() {
 
       <EarthquakeDetailModal
         item={modalItem}
-        onClose={() => setModalItem(null)}
+        onClose={handleCloseModal}
       />
     </div>
   );
