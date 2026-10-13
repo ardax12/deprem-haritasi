@@ -5,7 +5,9 @@ import com.ag.deprem.model.entity.SourceReport;
 import com.ag.deprem.model.entity.SourceReportRevision;
 import com.ag.deprem.repository.SourceReportRepository;
 import com.ag.deprem.repository.SourceReportRevisionRepository;
+import jakarta.persistence.criteria.Expression;
 import jakarta.persistence.criteria.Predicate;
+import jakarta.persistence.criteria.CriteriaBuilder;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -18,6 +20,7 @@ import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -118,12 +121,12 @@ public class EarthquakeQueryService {
                 }
             }
 
-            // Place search
+            // Place search with Turkish I/İ case folding
             if (place != null && !place.isBlank()) {
-                String pattern = "%" + place.trim().toLowerCase() + "%";
-                Predicate inLocation = cb.like(cb.lower(root.get("locationText")), pattern);
-                Predicate inProvince = cb.like(cb.lower(root.get("province")), pattern);
-                Predicate inDistrict = cb.like(cb.lower(root.get("district")), pattern);
+                String pattern = "%" + turkishFold(place.trim()) + "%";
+                Predicate inLocation = cb.like(turkishFold(cb, root.get("locationText")), pattern);
+                Predicate inProvince = cb.like(turkishFold(cb, root.get("province")), pattern);
+                Predicate inDistrict = cb.like(turkishFold(cb, root.get("district")), pattern);
                 predicates.add(cb.or(inLocation, inProvince, inDistrict));
             }
 
@@ -307,5 +310,25 @@ public class EarthquakeQueryService {
         } catch (NumberFormatException e) {
             throw new IllegalArgumentException("Malformed numeric value in bbox: " + bbox);
         }
+    }
+
+    private static final Locale TR_LOCALE = Locale.forLanguageTag("tr-TR");
+
+    private Expression<String> turkishFold(CriteriaBuilder cb, Expression<String> expr) {
+        Expression<String> r1 = cb.function("replace", String.class, expr, cb.literal("İ"), cb.literal("i"));
+        Expression<String> r2 = cb.function("replace", String.class, r1, cb.literal("I"), cb.literal("i"));
+        Expression<String> r3 = cb.function("replace", String.class, r2, cb.literal("ı"), cb.literal("i"));
+        return cb.lower(r3);
+    }
+
+    private String turkishFold(String str) {
+        if (str == null) {
+            return "";
+        }
+        return str.replace("İ", "i")
+                .replace("I", "i")
+                .replace("ı", "i")
+                .toLowerCase(TR_LOCALE)
+                .toLowerCase(Locale.ROOT);
     }
 }

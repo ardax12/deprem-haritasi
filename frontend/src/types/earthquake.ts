@@ -75,7 +75,7 @@ export interface SystemStatus {
 export interface FilterParams {
   timeRange: '24h' | '3d' | '7d' | '30d';
   minMagnitude: number | null;
-  magnitudeType: string;
+  magnitudeType?: string;
   place: string;
   sortBy: 'occurredAt:desc' | 'magnitude:desc';
 }

@@ -3,12 +3,19 @@ import type { Freshness } from '../types/earthquake';
 
 interface HeaderProps {
   freshness?: Freshness;
+  itemsCount?: number;
   totalCount: number;
   loading: boolean;
   onRefresh: () => void;
 }
 
-export const Header: React.FC<HeaderProps> = ({ freshness, totalCount, loading, onRefresh }) => {
+export const Header: React.FC<HeaderProps> = ({
+  freshness,
+  itemsCount,
+  totalCount,
+  loading,
+  onRefresh
+}) => {
   const getStatusBadge = () => {
     if (!freshness) return <span className="badge badge-gray">Bağlanıyor...</span>;
     if (freshness.status === 'current') {
@@ -30,6 +37,10 @@ export const Header: React.FC<HeaderProps> = ({ freshness, totalCount, loading, 
     }
   };
 
+  const countDisplay = itemsCount !== undefined && totalCount > itemsCount
+    ? `${itemsCount} / ${totalCount}`
+    : `${totalCount}`;
+
   return (
     <header className="app-header">
       <div className="header-disclaimer-banner" role="alert">
@@ -48,7 +59,7 @@ export const Header: React.FC<HeaderProps> = ({ freshness, totalCount, loading, 
           <div className="header-logo-icon">🌐</div>
           <div>
             <h1 className="header-title">Türkiye Deprem İzleme Haritası</h1>
-            <p className="header-subtitle">Güvenilir AFAD Kaynaklı Açık Deprem Kataloğu • {totalCount} Olay Listelendi</p>
+            <p className="header-subtitle">Güvenilir AFAD Kaynaklı Açık Deprem Kataloğu • {countDisplay} Olay Listelendi</p>
           </div>
         </div>
 
@@ -68,7 +79,7 @@ export const Header: React.FC<HeaderProps> = ({ freshness, totalCount, loading, 
             aria-label="Verileri Şimdi Yenile"
             title="Verileri Yenile"
           >
-            <span className={`refresh-icon ${loading ? 'spinning' : ''}`} aria-hidden="true">↻</span>
+            <span className={`refresh-icon ${loading ? 'spinning' : ''}`} aria-hidden="true">↺</span>
             <span>{loading ? 'Yenileniyor...' : 'Yenile'}</span>
           </button>
         </div>

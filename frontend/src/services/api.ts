@@ -2,7 +2,7 @@ import type { EarthquakesResponse, EarthquakeDetail, SystemStatus, FilterParams 
 
 const API_BASE = '/api/v1';
 
-export async function fetchEarthquakes(filters: FilterParams, page: number = 0): Promise<EarthquakesResponse> {
+export async function fetchEarthquakes(filters: FilterParams, page: number = 0, signal?: AbortSignal): Promise<EarthquakesResponse> {
   const now = new Date();
   let start = new Date(now.getTime() - 24 * 60 * 60 * 1000); // default 24h
 
@@ -32,6 +32,7 @@ export async function fetchEarthquakes(filters: FilterParams, page: number = 0):
   }
 
   const res = await fetch(`${API_BASE}/earthquakes?${query.toString()}`, {
+    signal,
     headers: {
       'Accept': 'application/json'
     }

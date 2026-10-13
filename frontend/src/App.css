@@ -804,6 +804,56 @@ body {
   to { transform: rotate(360deg); }
 }
 
+.list-load-more-container {
+  padding: 12px 8px 16px;
+  display: flex;
+  justify-content: center;
+}
+
+.btn-load-more {
+  width: 100%;
+  max-width: 380px;
+  min-height: 44px;
+  padding: 10px 16px;
+  border-radius: 8px;
+  background-color: var(--surface-card);
+  border: 1px solid var(--border-card);
+  color: #60a5fa;
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  transition: background-color 0.15s ease, border-color 0.15s ease, transform 0.1s ease;
+}
+
+.btn-load-more:hover:not(:disabled) {
+  background-color: var(--surface-card-hover);
+  border-color: #3b82f6;
+  color: #93c5fd;
+}
+
+.btn-load-more:active:not(:disabled) {
+  transform: scale(0.98);
+}
+
+.btn-load-more:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.loader-spinner-sm {
+  width: 16px;
+  height: 16px;
+  border: 2px solid #334155;
+  border-top-color: #3b82f6;
+  border-radius: 50%;
+  animation: spin 0.75s linear infinite;
+  display: inline-block;
+}
+
 /* MODAL */
 .modal-backdrop {
   position: fixed;

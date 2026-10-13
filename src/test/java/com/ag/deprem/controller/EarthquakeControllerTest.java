@@ -111,6 +111,98 @@ class EarthquakeControllerTest {
     }
 
     @Test
+    void testFilterByPlaceTurkishCharacters() throws Exception {
+        AfadRawEventDto izmirEvent = new AfadRawEventDto();
+        izmirEvent.setEventId("731201");
+        izmirEvent.setDate("2026-10-12T05:00:00");
+        izmirEvent.setLatitude("38.4237");
+        izmirEvent.setLongitude("27.1428");
+        izmirEvent.setDepth("10.0");
+        izmirEvent.setMagnitude("3.2");
+        izmirEvent.setType("Mw");
+        izmirEvent.setLocation("Bornova (İzmir)");
+        izmirEvent.setProvince("İzmir");
+        izmirEvent.setDistrict("Bornova");
+        izmirEvent.setCountry("Türkiye");
+
+        AfadRawEventDto igdirEvent = new AfadRawEventDto();
+        igdirEvent.setEventId("731202");
+        igdirEvent.setDate("2026-10-12T06:00:00");
+        igdirEvent.setLatitude("39.9196");
+        igdirEvent.setLongitude("44.0450");
+        igdirEvent.setDepth("8.5");
+        igdirEvent.setMagnitude("2.5");
+        igdirEvent.setType("ML");
+        igdirEvent.setLocation("Aralık (Iğdır)");
+        igdirEvent.setProvince("Iğdır");
+        igdirEvent.setDistrict("Aralık");
+        igdirEvent.setCountry("Türkiye");
+
+        ingestionService.ingestAfadEvents(List.of(izmirEvent, igdirEvent));
+
+        // Test searching İzmir with various Turkish and Latin letter variations
+        for (String search : List.of("İzmir", "izmir", "İZMİR", "IZMIR")) {
+            mockMvc.perform(get("/api/v1/earthquakes")
+                            .param("start", "2026-10-11T00:00:00Z")
+                            .param("end", "2026-10-13T00:00:00Z")
+                            .param("place", search))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.items[0].id").value("afad:731201"));
+        }
+
+        // Test searching Iğdır with various Turkish and Latin letter variations
+        for (String search : List.of("Iğdır", "ığdır", "IĞDIR")) {
+            mockMvc.perform(get("/api/v1/earthquakes")
+                            .param("start", "2026-10-11T00:00:00Z")
+                            .param("end", "2026-10-13T00:00:00Z")
+                            .param("place", search))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.items[0].id").value("afad:731202"));
+        }
+    }
+
+    @Test
+    void testFilterByMagnitudeType() throws Exception {
+        AfadRawEventDto mwEvent = new AfadRawEventDto();
+        mwEvent.setEventId("731203");
+        mwEvent.setDate("2026-10-12T07:00:00");
+        mwEvent.setLatitude("38.0");
+        mwEvent.setLongitude("27.0");
+        mwEvent.setDepth("10.0");
+        mwEvent.setMagnitude("4.5");
+        mwEvent.setType("Mw");
+        mwEvent.setLocation("Ege Denizi");
+        mwEvent.setCountry("Türkiye");
+
+        ingestionService.ingestAfadEvents(List.of(mwEvent));
+
+        // Filter ML should find existing ML events and not the Mw event
+        mockMvc.perform(get("/api/v1/earthquakes")
+                        .param("start", "2026-10-11T00:00:00Z")
+                        .param("end", "2026-10-13T00:00:00Z")
+                        .param("magnitudeType", "ML"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.items.length()").value(2));
+
+        // Filter Mw should find the Mw event
+        mockMvc.perform(get("/api/v1/earthquakes")
+                        .param("start", "2026-10-11T00:00:00Z")
+                        .param("end", "2026-10-13T00:00:00Z")
+                        .param("magnitudeType", "Mw"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.items.length()").value(1))
+                .andExpect(jsonPath("$.items[0].id").value("afad:731203"));
+
+        // Filter MD should find 0 events
+        mockMvc.perform(get("/api/v1/earthquakes")
+                        .param("start", "2026-10-11T00:00:00Z")
+                        .param("end", "2026-10-13T00:00:00Z")
+                        .param("magnitudeType", "MD"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.items.length()").value(0));
+    }
+
+    @Test
     void testInvalidBboxReturns400ProblemDetail() throws Exception {
         mockMvc.perform(get("/api/v1/earthquakes")
                         .param("bbox", "invalid,coords"))

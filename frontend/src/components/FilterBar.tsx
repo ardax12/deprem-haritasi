@@ -1,14 +1,47 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import type { FilterParams } from '../types/earthquake';
 
 interface FilterBarProps {
   filters: FilterParams;
   onChange: (updated: Partial<FilterParams>) => void;
   onReset: () => void;
+  itemsCount: number;
   totalCount: number;
 }
 
-export const FilterBar: React.FC<FilterBarProps> = ({ filters, onChange, onReset, totalCount }) => {
+export const FilterBar: React.FC<FilterBarProps> = ({
+  filters,
+  onChange,
+  onReset,
+  itemsCount,
+  totalCount
+}) => {
+  const [localPlace, setLocalPlace] = useState(filters.place);
+
+  // Sync local place input when parent filters change (e.g. on reset)
+  useEffect(() => {
+    setLocalPlace(filters.place);
+  }, [filters.place]);
+
+  // Debounce search input by 350ms to prevent request flooding and race conditions
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      if (localPlace !== filters.place) {
+        onChange({ place: localPlace });
+      }
+    }, 350);
+    return () => clearTimeout(timer);
+  }, [localPlace, filters.place, onChange]);
+
+  const handlePlaceKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      if (localPlace !== filters.place) {
+        onChange({ place: localPlace });
+      }
+    }
+  };
+
   return (
     <div className="filter-bar" role="search" aria-label="Deprem Filtreleri">
       <div className="filter-group">
@@ -31,7 +64,7 @@ export const FilterBar: React.FC<FilterBarProps> = ({ filters, onChange, onReset
         <select
           id="min-magnitude-select"
           className="filter-select"
-          value={filters.minMagnitude ?? ''}
+          value={filters.minMagnitude !== null && filters.minMagnitude !== undefined ? filters.minMagnitude.toFixed(1) : ''}
           onChange={(e) => {
             const val = e.target.value !== '' ? parseFloat(e.target.value) : null;
             onChange({ minMagnitude: val });
@@ -45,21 +78,6 @@ export const FilterBar: React.FC<FilterBarProps> = ({ filters, onChange, onReset
         </select>
       </div>
 
-      <div className="filter-group">
-        <label htmlFor="mag-type-select" className="filter-label">Ölçek Tipi</label>
-        <select
-          id="mag-type-select"
-          className="filter-select"
-          value={filters.magnitudeType}
-          onChange={(e) => onChange({ magnitudeType: e.target.value })}
-        >
-          <option value="ALL">Tümü (ML, Mw, MD)</option>
-          <option value="ML">ML (Yerel)</option>
-          <option value="Mw">Mw (Moment)</option>
-          <option value="MD">MD (Süreye Bağlı)</option>
-        </select>
-      </div>
-
       <div className="filter-group filter-group-grow">
         <label htmlFor="place-search-input" className="filter-label">Yer / Bölge Arama</label>
         <input
@@ -67,8 +85,9 @@ export const FilterBar: React.FC<FilterBarProps> = ({ filters, onChange, onReset
           type="text"
           className="filter-input"
           placeholder="İl, ilçe veya bölge (örn: Malatya, Maraş)..."
-          value={filters.place}
-          onChange={(e) => onChange({ place: e.target.value })}
+          value={localPlace}
+          onChange={(e) => setLocalPlace(e.target.value)}
+          onKeyDown={handlePlaceKeyDown}
         />
       </div>
 
@@ -87,9 +106,17 @@ export const FilterBar: React.FC<FilterBarProps> = ({ filters, onChange, onReset
 
       <div className="filter-meta">
         <span className="count-badge" aria-live="polite">
-          <strong>{totalCount}</strong> deprem listelendi
+          {totalCount > itemsCount ? (
+            <>
+              <strong>{itemsCount} / {totalCount}</strong> deprem listelendi
+            </>
+          ) : (
+            <>
+              <strong>{totalCount}</strong> deprem listelendi
+            </>
+          )}
         </span>
-        {(filters.minMagnitude !== null || filters.place !== '' || filters.magnitudeType !== 'ALL' || filters.timeRange !== '24h') && (
+        {(filters.minMagnitude !== null || filters.place !== '' || filters.timeRange !== '24h') && (
           <button type="button" className="btn-reset" onClick={onReset} title="Filtreleri Temizle" aria-label="Filtreleri Temizle">
             ✕ Temizle
           </button>

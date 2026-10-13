@@ -8,6 +8,10 @@ interface EarthquakeListProps {
   onSelect: (item: EarthquakeItem) => void;
   onOpenDetail: (item: EarthquakeItem) => void;
   loading: boolean;
+  totalCount?: number;
+  hasMore?: boolean;
+  loadingMore?: boolean;
+  onLoadMore?: () => void;
 }
 
 export const EarthquakeList: React.FC<EarthquakeListProps> = ({
@@ -15,7 +19,11 @@ export const EarthquakeList: React.FC<EarthquakeListProps> = ({
   selectedItem,
   onSelect,
   onOpenDetail,
-  loading
+  loading,
+  totalCount,
+  hasMore,
+  loadingMore,
+  onLoadMore
 }) => {
   const getMagClass = (val?: number | null) => {
     if (val === null || val === undefined) return 'mag-gray';
@@ -66,10 +74,14 @@ export const EarthquakeList: React.FC<EarthquakeListProps> = ({
     );
   }
 
+  const countDisplay = totalCount !== undefined && totalCount > items.length
+    ? `${items.length} / ${totalCount}`
+    : `${items.length}`;
+
   return (
     <div className="list-wrapper">
       <div className="list-header">
-        <h2 className="list-title">Deprem Olayları ({items.length})</h2>
+        <h2 className="list-title">Deprem Olayları ({countDisplay})</h2>
         <span className="list-hint">Haritada görmek için tıklayın</span>
       </div>
 
@@ -150,6 +162,29 @@ export const EarthquakeList: React.FC<EarthquakeListProps> = ({
             </article>
           );
         })}
+
+        {hasMore && (
+          <div className="list-load-more-container">
+            <button
+              type="button"
+              className="btn-load-more"
+              onClick={onLoadMore}
+              disabled={loadingMore}
+              aria-label="Daha fazla deprem kaydı yükle"
+            >
+              {loadingMore ? (
+                <>
+                  <span className="loader-spinner-sm" aria-hidden="true" />
+                  <span>Yükleniyor...</span>
+                </>
+              ) : (
+                <span>
+                  Daha Fazla Göster {totalCount ? `(${totalCount - items.length} deprem daha)` : ''} ↓
+                </span>
+              )}
+            </button>
+          </div>
+        )}
       </div>
     </div>
   );
