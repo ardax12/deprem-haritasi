@@ -7,6 +7,9 @@ interface HeaderProps {
   totalCount: number;
   loading: boolean;
   onRefresh: () => void;
+  isInstallable?: boolean;
+  onInstall?: () => void;
+  isOnline?: boolean;
 }
 
 export const Header: React.FC<HeaderProps> = ({
@@ -14,9 +17,15 @@ export const Header: React.FC<HeaderProps> = ({
   itemsCount,
   totalCount,
   loading,
-  onRefresh
+  onRefresh,
+  isInstallable,
+  onInstall,
+  isOnline = true
 }) => {
   const getStatusBadge = () => {
+    if (!isOnline) {
+      return <span className="badge badge-gray" title="İnternet bağlantısı yok">○ Çevrimdışı</span>;
+    }
     if (!freshness) return <span className="badge badge-gray">Bağlanıyor...</span>;
     if (freshness.status === 'current') {
       return <span className="badge badge-green" title="Kaynak güncel (< 20 dk)">● Canlı / Güncel</span>;
@@ -71,6 +80,19 @@ export const Header: React.FC<HeaderProps> = ({
               Son Kontrol: {formatLastFetch(freshness?.lastSuccessfulFetchAt)}
             </span>
           </div>
+
+          {isInstallable && (
+            <button
+              type="button"
+              className="btn-install-app"
+              onClick={onInstall}
+              title="Deprem Haritasını Cihazınıza Yükleyin (PWA)"
+              aria-label="Uygulamayı Yükle"
+            >
+              <span className="install-icon" aria-hidden="true">📲</span>
+              <span>Uygulamayı Yükle</span>
+            </button>
+          )}
 
           <button
             className={`btn-refresh ${loading ? 'loading' : ''}`}

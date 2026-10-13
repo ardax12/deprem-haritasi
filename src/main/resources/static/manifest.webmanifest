@@ -1,0 +1,50 @@
+{
+  "id": "/",
+  "name": "Türkiye Deprem İzleme Haritası",
+  "short_name": "Deprem Haritası",
+  "description": "AFAD verileriyle Türkiye ve yakın çevresi açık deprem izleme ve sismik hareketlilik haritası.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#090d16",
+  "theme_color": "#0f172a",
+  "lang": "tr",
+  "dir": "ltr",
+  "categories": ["utilities", "news"],
+  "icons": [
+    {
+      "src": "/icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/icon-maskable.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
+    {
+      "src": "/icons/icon.svg",
+      "sizes": "512x512",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Son Depremler",
+      "short_name": "Depremler",
+      "description": "Son 24 saatteki güncel depremleri görüntüle",
+      "url": "/",
+      "icons": [{ "src": "/icons/icon-192.png", "sizes": "192x192" }]
+    }
+  ]
+}

@@ -26,9 +26,58 @@ export function App() {
   const [loadingMore, setLoadingMore] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<'map' | 'list'>('map');
+  const [isOnline, setIsOnline] = useState<boolean>(typeof navigator !== 'undefined' ? navigator.onLine : true);
+  const [installPrompt, setInstallPrompt] = useState<any>(null);
 
   const activeRequestIdRef = useRef<number>(0);
   const deepLinkedItemRef = useRef<EarthquakeItem | null>(null);
+
+  // Monitor network online/offline status
+  useEffect(() => {
+    const handleOnline = () => setIsOnline(true);
+    const handleOffline = () => setIsOnline(false);
+
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
+
+    return () => {
+      window.removeEventListener('online', handleOnline);
+      window.removeEventListener('offline', handleOffline);
+    };
+  }, []);
+
+  // Monitor PWA install prompt
+  useEffect(() => {
+    const handleBeforeInstall = (e: Event) => {
+      e.preventDefault();
+      setInstallPrompt(e);
+    };
+
+    const handleAppInstalled = () => {
+      setInstallPrompt(null);
+    };
+
+    window.addEventListener('beforeinstallprompt', handleBeforeInstall);
+    window.addEventListener('appinstalled', handleAppInstalled);
+
+    return () => {
+      window.removeEventListener('beforeinstallprompt', handleBeforeInstall);
+      window.removeEventListener('appinstalled', handleAppInstalled);
+    };
+  }, []);
+
+  const handleInstallApp = async () => {
+    if (!installPrompt) return;
+    installPrompt.prompt();
+    try {
+      const choice = await installPrompt.userChoice;
+      if (choice && choice.outcome === 'accepted') {
+        setInstallPrompt(null);
+      }
+    } catch (err) {
+      console.warn('Uygulama yükleme isteği tamamlanamadı:', err);
+    }
+  };
 
   // Deep-link initial check: if URL contains ?event=<id>, fetch its details immediately
   useEffect(() => {
@@ -221,7 +270,17 @@ export function App() {
         totalCount={totalCount}
         loading={loading}
         onRefresh={refreshData}
+        isOnline={isOnline}
+        isInstallable={!!installPrompt}
+        onInstall={handleInstallApp}
       />
+
+      {!isOnline && (
+        <div className="global-offline-banner" role="status">
+          <span className="offline-icon">📡</span>
+          <span><strong>Çevrimdışı Mod:</strong> İnternet bağlantısı kesildi. Cihazınızda önbelleğe alınmış son deprem verileri gösterilmektedir.</span>
+        </div>
+      )}
 
       <FilterBar
         filters={filters}
