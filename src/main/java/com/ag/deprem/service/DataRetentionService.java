@@ -21,12 +21,18 @@ public class DataRetentionService {
     private static final Logger log = LoggerFactory.getLogger(DataRetentionService.class);
 
     private final SourceReportRepository sourceReportRepository;
+    private final ArchiveExporterService archiveExporterService;
     private final int retentionDays;
+    private final boolean autoExportBeforeCleanup;
 
     public DataRetentionService(SourceReportRepository sourceReportRepository,
-                                @Value("${app.retention.days:30}") int retentionDays) {
+                                ArchiveExporterService archiveExporterService,
+                                @Value("${app.retention.days:30}") int retentionDays,
+                                @Value("${app.archive.auto-export-before-cleanup:true}") boolean autoExportBeforeCleanup) {
         this.sourceReportRepository = sourceReportRepository;
+        this.archiveExporterService = archiveExporterService;
         this.retentionDays = retentionDays;
+        this.autoExportBeforeCleanup = autoExportBeforeCleanup;
     }
 
     // Run every day at 03:00 UTC (cron = "0 0 3 * * *") and once 30 seconds after startup
@@ -40,6 +46,20 @@ public class DataRetentionService {
         try {
             List<SourceReport> oldReports = sourceReportRepository.findByFirstSeenAtBefore(cutoff);
             if (!oldReports.isEmpty()) {
+                if (autoExportBeforeCleanup) {
+                    try {
+                        Instant minDate = oldReports.stream()
+                                .map(SourceReport::getFirstSeenAt)
+                                .min(Instant::compareTo)
+                                .orElse(cutoff.minus(7, ChronoUnit.DAYS));
+                        String shardVersion = "retention-" + cutoff.toEpochMilli();
+                        log.info("Auto-exporting archive shard before cleanup: {}", shardVersion);
+                        archiveExporterService.exportArchive(minDate, cutoff, shardVersion);
+                    } catch (Exception ex) {
+                        log.warn("Auto-export before cleanup failed: {}", ex.getMessage());
+                    }
+                }
+
                 sourceReportRepository.deleteAll(oldReports);
                 log.info("Data retention cleanup completed: removed {} old reports and their revisions.", oldReports.size());
             } else {

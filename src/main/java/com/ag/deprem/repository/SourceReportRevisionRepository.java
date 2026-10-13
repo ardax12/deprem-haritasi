@@ -24,6 +24,9 @@ public interface SourceReportRevisionRepository extends JpaRepository<SourceRepo
     @Query("SELECT r FROM SourceReportRevision r WHERE r.id = r.sourceReport.currentRevisionId AND r.occurredAt >= :start AND r.occurredAt < :end ORDER BY r.occurredAt DESC")
     Page<SourceReportRevision> findCurrentRevisionsBetween(@Param("start") Instant start, @Param("end") Instant end, Pageable pageable);
 
+    @Query("SELECT r FROM SourceReportRevision r JOIN FETCH r.sourceReport WHERE r.id = r.sourceReport.currentRevisionId AND r.occurredAt >= :start AND r.occurredAt < :end ORDER BY r.occurredAt ASC")
+    List<SourceReportRevision> findAllCurrentRevisionsBetween(@Param("start") Instant start, @Param("end") Instant end);
+
     @Query("SELECT MAX(r.occurredAt) FROM SourceReportRevision r")
     Optional<Instant> findLatestOccurredAt();
 }
