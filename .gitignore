@@ -42,9 +42,7 @@ frontend/dist/
 graphify-out/
 
 ### Python / Research ###
-research/.venv/
-research/__pycache__/
-*.pyc
+research/
 
 ### Secrets & Environment ###
 *.env
