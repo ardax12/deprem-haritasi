@@ -1,5 +1,6 @@
 import React from 'react';
 import type { Freshness } from '../types/earthquake';
+import { IconInfo, IconDownload, IconSeismicLogo } from './Icons';
 
 interface HeaderProps {
   freshness?: Freshness;
@@ -7,6 +8,7 @@ interface HeaderProps {
   totalCount: number;
   loading: boolean;
   onRefresh: () => void;
+  onOpenInfo?: () => void;
   isInstallable?: boolean;
   onInstall?: () => void;
   isOnline?: boolean;
@@ -18,6 +20,7 @@ export const Header: React.FC<HeaderProps> = ({
   totalCount,
   loading,
   onRefresh,
+  onOpenInfo,
   isInstallable,
   onInstall,
   isOnline = true
@@ -52,8 +55,8 @@ export const Header: React.FC<HeaderProps> = ({
 
   return (
     <header className="app-header">
-      <div className="header-disclaimer-banner" role="alert">
-        <span className="disclaimer-icon">ℹ</span>
+      <div className="header-disclaimer-banner" role="region" aria-label="Resmi Bilgilendirme Notu">
+        <span className="disclaimer-icon"><IconInfo size={15} /></span>
         <span>
           <strong>Resmi Bilgilendirme Notu:</strong> Bu uygulama kamuya açık bir izleme aracıdır; resmi erken uyarı veya acil durum hizmeti değildir.
           Veriler kaynaklardan gecikmeli veya revizyonlu iletilebilir. Resmi ve anlık bilgi için lütfen{' '}
@@ -65,7 +68,9 @@ export const Header: React.FC<HeaderProps> = ({
 
       <div className="header-main">
         <div className="header-title-group">
-          <div className="header-logo-icon">🌐</div>
+          <div className="header-logo-icon">
+            <IconSeismicLogo size={22} />
+          </div>
           <div>
             <h1 className="header-title">Türkiye Deprem İzleme Haritası</h1>
             <p className="header-subtitle">Güvenilir AFAD Kaynaklı Açık Deprem Kataloğu • {countDisplay} Olay Listelendi</p>
@@ -89,8 +94,21 @@ export const Header: React.FC<HeaderProps> = ({
               title="Deprem Haritasını Cihazınıza Yükleyin (PWA)"
               aria-label="Uygulamayı Yükle"
             >
-              <span className="install-icon" aria-hidden="true">📲</span>
+              <IconDownload size={15} className="install-icon" />
               <span>Uygulamayı Yükle</span>
+            </button>
+          )}
+
+          {onOpenInfo && (
+            <button
+              type="button"
+              className="btn-info"
+              onClick={onOpenInfo}
+              title="Deprem Bilgi Rehberi ve SSS"
+              aria-label="Deprem Bilgi Rehberi ve Sıkça Sorulan Sorular"
+            >
+              <IconInfo size={15} />
+              <span>Rehber & SSS</span>
             </button>
           )}
 
@@ -101,7 +119,22 @@ export const Header: React.FC<HeaderProps> = ({
             aria-label="Verileri Şimdi Yenile"
             title="Verileri Yenile"
           >
-            <span className={`refresh-icon ${loading ? 'spinning' : ''}`} aria-hidden="true">↺</span>
+            <svg
+              width="15"
+              height="15"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              className={`refresh-icon ${loading ? 'spinning' : ''}`}
+              aria-hidden="true"
+            >
+              <path d="M23 4v6h-6" />
+              <path d="M1 20v-6h6" />
+              <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15" />
+            </svg>
             <span>{loading ? 'Yenileniyor...' : 'Yenile'}</span>
           </button>
         </div>

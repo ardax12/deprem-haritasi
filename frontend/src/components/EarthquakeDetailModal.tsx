@@ -2,6 +2,8 @@ import React, { useEffect, useState, useRef } from 'react';
 import type { EarthquakeItem, EarthquakeDetail } from '../types/earthquake';
 import { fetchEarthquakeDetail } from '../services/api';
 import { parseItemLocation } from '../utils/locationHelper';
+import { formatRelativeTime } from '../utils/timeHelper';
+import { IconSea, IconGlobe, IconLand, IconShare, IconCheck, IconAlertTriangle } from './Icons';
 
 interface EarthquakeDetailModalProps {
   item: EarthquakeItem | null;
@@ -20,6 +22,7 @@ export const EarthquakeDetailModal: React.FC<EarthquakeDetailModalProps> = ({ it
 
   const activeItem = detail ? detail.current : item;
   const parsedLoc = activeItem ? parseItemLocation(activeItem) : null;
+  const relTime = formatRelativeTime(activeItem?.occurredAt);
 
   const formatDate = (isoStr?: string | null) => {
     if (!isoStr) return '-';
@@ -142,13 +145,15 @@ export const EarthquakeDetailModal: React.FC<EarthquakeDetailModalProps> = ({ it
         <div className="modal-header">
           <div>
             <div className="modal-header-top">
-              <span className="modal-category">Deprem Detayı</span>
               {parsedLoc.isOffshore ? (
-                <span className="environment-badge offshore">🌊 Açık Deniz Depremi</span>
+                <span className="environment-badge offshore"><IconSea size={14} /> Açık Deniz Depremi</span>
               ) : parsedLoc.isCrossBorder ? (
-                <span className="environment-badge cross-border">🌐 Sınır Ötesi</span>
+                <span className="environment-badge cross-border"><IconGlobe size={14} /> Sınır Ötesi</span>
               ) : (
-                <span className="environment-badge land">📍 Kara Depremi</span>
+                <span className="environment-badge land"><IconLand size={14} /> Kara Depremi</span>
+              )}
+              {relTime && (
+                <span className="badge-rel-time">{relTime}</span>
               )}
             </div>
             <h2 id="modal-title" className="modal-title">
@@ -163,7 +168,17 @@ export const EarthquakeDetailModal: React.FC<EarthquakeDetailModalProps> = ({ it
               title="Deprem bağlantısını kopyala veya paylaş"
               aria-label="Deprem bağlantısını paylaş"
             >
-              {copied ? '✓ Kopyalandı' : '🔗 Paylaş'}
+              {copied ? (
+                <>
+                  <IconCheck size={14} />
+                  <span>Kopyalandı</span>
+                </>
+              ) : (
+                <>
+                  <IconShare size={14} />
+                  <span>Paylaş</span>
+                </>
+              )}
             </button>
             <button ref={closeBtnRef} className="btn-modal-close" onClick={onClose} aria-label="Pencereyi Kapat">✕</button>
           </div>
@@ -179,7 +194,8 @@ export const EarthquakeDetailModal: React.FC<EarthquakeDetailModalProps> = ({ it
 
           {error && (
             <div className="modal-error" role="alert">
-              ⚠️ {error}
+              <IconAlertTriangle size={16} />
+              <span>{error}</span>
             </div>
           )}
 
@@ -209,7 +225,7 @@ export const EarthquakeDetailModal: React.FC<EarthquakeDetailModalProps> = ({ it
                   <div className="info-grid">
                     <div className="info-item">
                       <span className="info-label">Deprem Ortamı:</span>
-                      <span className="info-val highlight-sea">Deniz</span>
+                      <span className="info-val highlight-sea"><IconSea size={14} /> Açık Deniz</span>
                     </div>
                     <div className="info-item">
                       <span className="info-label">Deniz / Havza:</span>
@@ -238,7 +254,7 @@ export const EarthquakeDetailModal: React.FC<EarthquakeDetailModalProps> = ({ it
                   <div className="info-grid">
                     <div className="info-item">
                       <span className="info-label">Deprem Ortamı:</span>
-                      <span className="info-val highlight-border">🌐 Sınır Ötesi Deprem</span>
+                      <span className="info-val highlight-border"><IconGlobe size={14} /> Sınır Ötesi Deprem</span>
                     </div>
                     <div className="info-item">
                       <span className="info-label">Bölge / Ülke:</span>
@@ -267,7 +283,7 @@ export const EarthquakeDetailModal: React.FC<EarthquakeDetailModalProps> = ({ it
                   <div className="info-grid">
                     <div className="info-item">
                       <span className="info-label">Deprem Ortamı:</span>
-                      <span className="info-val">📍 Kara Depremi</span>
+                      <span className="info-val"><IconLand size={14} /> Kara Depremi</span>
                     </div>
                     <div className="info-item">
                       <span className="info-label">İl / Bölge:</span>
@@ -356,7 +372,17 @@ export const EarthquakeDetailModal: React.FC<EarthquakeDetailModalProps> = ({ it
             onClick={handleShare}
             aria-label="Deprem bağlantısını kopyala veya paylaş"
           >
-            {copied ? '✓ Bağlantı Kopyalandı' : '🔗 Bağlantıyı Paylaş'}
+            {copied ? (
+              <>
+                <IconCheck size={16} />
+                <span>Bağlantı Kopyalandı</span>
+              </>
+            ) : (
+              <>
+                <IconShare size={16} />
+                <span>Bağlantıyı Paylaş</span>
+              </>
+            )}
           </button>
           <button type="button" className="btn-modal-primary" onClick={onClose}>Tamam</button>
         </div>

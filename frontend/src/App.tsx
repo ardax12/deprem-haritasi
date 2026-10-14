@@ -4,6 +4,8 @@ import { FilterBar } from './components/FilterBar';
 import { EarthquakeMap } from './components/EarthquakeMap';
 import { EarthquakeList } from './components/EarthquakeList';
 import { EarthquakeDetailModal } from './components/EarthquakeDetailModal';
+import { InfoModal } from './components/InfoModal';
+import { IconMap, IconList, IconWifiOff, IconAlertTriangle } from './components/Icons';
 import type { EarthquakeItem, FilterParams, Freshness, PageInfo, EarthquakeDetail } from './types/earthquake';
 import { fetchEarthquakes, fetchEarthquakeDetail, computeTimeWindow, type TimeWindow } from './services/api';
 import './App.css';
@@ -22,6 +24,7 @@ export function App() {
   const [freshness, setFreshness] = useState<Freshness | undefined>(undefined);
   const [selectedItem, setSelectedItem] = useState<EarthquakeItem | null>(null);
   const [modalItem, setModalItem] = useState<EarthquakeItem | null>(null);
+  const [infoModalOpen, setInfoModalOpen] = useState<boolean>(false);
   const [loading, setLoading] = useState<boolean>(true);
   const [loadingMore, setLoadingMore] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
@@ -134,10 +137,10 @@ export function App() {
     setLoading(true);
     setError(null);
 
-    const window = computeTimeWindow(filters.timeRange);
-    currentTimeWindowRef.current = window;
+    const timeWindow = computeTimeWindow(filters.timeRange);
+    currentTimeWindowRef.current = timeWindow;
 
-    fetchEarthquakes(filters, 0, window, controller.signal)
+    fetchEarthquakes(filters, 0, timeWindow, controller.signal)
       .then(response => {
         if (requestId === activeRequestIdRef.current) {
           const loadedItems = [...response.items];
@@ -170,9 +173,9 @@ export function App() {
     setError(null);
 
     try {
-      const window = computeTimeWindow(filters.timeRange);
-      currentTimeWindowRef.current = window;
-      const response = await fetchEarthquakes(filters, 0, window, controller.signal);
+      const timeWindow = computeTimeWindow(filters.timeRange);
+      currentTimeWindowRef.current = timeWindow;
+      const response = await fetchEarthquakes(filters, 0, timeWindow, controller.signal);
       if (requestId === activeRequestIdRef.current) {
         const loadedItems = [...response.items];
         if (deepLinkedItemRef.current && !loadedItems.some(it => it.id === deepLinkedItemRef.current!.id)) {
@@ -244,6 +247,9 @@ export function App() {
 
   const handleSelectItem = (item: EarthquakeItem) => {
     setSelectedItem(item);
+    if (typeof window !== 'undefined' && window.innerWidth <= 900) {
+      setActiveTab('map');
+    }
   };
 
   const handleOpenDetail = (item: EarthquakeItem) => {
@@ -261,7 +267,7 @@ export function App() {
     const url = new URL(window.location.href);
     if (url.searchParams.has('event')) {
       url.searchParams.delete('event');
-      window.history.pushState({}, '', url.toString());
+      window.history.replaceState({}, '', url.toString());
     }
   };
 
@@ -276,6 +282,7 @@ export function App() {
         totalCount={totalCount}
         loading={loading}
         onRefresh={refreshData}
+        onOpenInfo={() => setInfoModalOpen(true)}
         isOnline={isOnline}
         isInstallable={!!installPrompt}
         onInstall={handleInstallApp}
@@ -283,7 +290,7 @@ export function App() {
 
       {!isOnline && (
         <div className="global-offline-banner" role="status">
-          <span className="offline-icon">📡</span>
+          <span className="offline-icon"><IconWifiOff size={16} /></span>
           <span><strong>Çevrimdışı Mod:</strong> İnternet bağlantısı kesildi. Cihazınızda önbelleğe alınmış son deprem verileri gösterilmektedir.</span>
         </div>
       )}
@@ -298,7 +305,7 @@ export function App() {
 
       {error && (
         <div className="global-error-banner" role="alert">
-          <span className="error-icon">⚠️</span>
+          <span className="error-icon"><IconAlertTriangle size={16} /></span>
           <span><strong>Bağlantı Sorunu:</strong> {error}. Lütfen internet bağlantınızı kontrol edip tekrar deneyin.</span>
           <button className="btn-error-retry" onClick={refreshData}>Tekrar Dene</button>
         </div>
@@ -314,7 +321,7 @@ export function App() {
           className={`tab-btn ${activeTab === 'map' ? 'active' : ''}`}
           onClick={() => setActiveTab('map')}
         >
-          🗺️ Harita
+          <IconMap size={16} /> Harita
         </button>
         <button
           id="tab-list"
@@ -324,7 +331,7 @@ export function App() {
           className={`tab-btn ${activeTab === 'list' ? 'active' : ''}`}
           onClick={() => setActiveTab('list')}
         >
-          📋 Olay Listesi ({totalCount > items.length ? `${items.length} / ${totalCount}` : items.length})
+          <IconList size={16} /> Olay Listesi ({totalCount > items.length ? `${items.length} / ${totalCount}` : items.length})
         </button>
       </div>
 
@@ -368,6 +375,11 @@ export function App() {
       <EarthquakeDetailModal
         item={modalItem}
         onClose={handleCloseModal}
+      />
+
+      <InfoModal
+        isOpen={infoModalOpen}
+        onClose={() => setInfoModalOpen(false)}
       />
     </div>
   );

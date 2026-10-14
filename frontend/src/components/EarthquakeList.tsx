@@ -1,6 +1,8 @@
-import React from 'react';
+import React, { useState } from 'react';
 import type { EarthquakeItem } from '../types/earthquake';
 import { parseItemLocation } from '../utils/locationHelper';
+import { formatRelativeTime } from '../utils/timeHelper';
+import { IconClock, IconSea, IconGlobe, IconAlertTriangle, IconSearch, IconInfo } from './Icons';
 
 interface EarthquakeListProps {
   items: EarthquakeItem[];
@@ -29,6 +31,8 @@ export const EarthquakeList: React.FC<EarthquakeListProps> = ({
   error,
   onRetry
 }) => {
+  const [advisoryVisible, setAdvisoryVisible] = useState<boolean>(true);
+
   const getMagClass = (val?: number | null) => {
     if (val === null || val === undefined) return 'mag-gray';
     if (val < 3.0) return 'mag-green';
@@ -70,7 +74,7 @@ export const EarthquakeList: React.FC<EarthquakeListProps> = ({
     return (
       <div className="list-wrapper">
         <div className="list-empty list-error-state" aria-live="assertive" role="alert">
-          <span className="empty-icon">⚠️</span>
+          <span className="empty-icon"><IconAlertTriangle size={36} /></span>
           <h3>Bağlantı / Servis Hatası</h3>
           <p>{error}</p>
           {onRetry && (
@@ -92,7 +96,7 @@ export const EarthquakeList: React.FC<EarthquakeListProps> = ({
     return (
       <div className="list-wrapper">
         <div className="list-empty" aria-live="polite">
-          <span className="empty-icon">🔍</span>
+          <span className="empty-icon"><IconSearch size={36} /></span>
           <h3>Kayıt Bulunamadı</h3>
           <p>Belirttiğiniz filtre kriterlerine uygun bir deprem kaydı bulunamadı. Filtreleri genişleterek tekrar deneyin.</p>
         </div>
@@ -111,26 +115,38 @@ export const EarthquakeList: React.FC<EarthquakeListProps> = ({
         <span className="list-hint">Haritada görmek için tıklayın</span>
       </div>
 
+      {advisoryVisible && (
+        <div className="list-advisory-banner" role="status">
+          <div className="advisory-content">
+            <IconInfo size={16} className="advisory-icon" />
+            <p className="advisory-text">
+              <strong>Sarsıntı mı hissettiniz?</strong> AFAD istasyonlarının ilk otomatik çözümleri genellikle 2–5 dakika içinde sisteme yansır. Sayfa otomatik güncellenmektedir.
+            </p>
+          </div>
+          <button
+            type="button"
+            className="btn-dismiss-advisory"
+            onClick={() => setAdvisoryVisible(false)}
+            aria-label="Bilgilendirmeyi Kapat"
+          >
+            ✕
+          </button>
+        </div>
+      )}
+
       <div className="earthquake-scroll-area" aria-label="Deprem Listesi">
         {items.map((item) => {
           const isSelected = selectedItem?.id === item.id;
           const magVal = item.magnitude?.value;
           const magType = item.magnitude?.type ?? '';
           const loc = parseItemLocation(item);
+          const relTime = formatRelativeTime(item.occurredAt);
 
           return (
             <article
               key={item.id}
-              tabIndex={0}
               className={`earthquake-card ${isSelected ? 'selected' : ''}`}
               onClick={() => onSelect(item)}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter' || e.key === ' ') {
-                  e.preventDefault();
-                  onSelect(item);
-                }
-              }}
-              aria-label={`${loc.displayTitle} - Büyüklük: ${magVal !== null && magVal !== undefined ? magVal.toFixed(1) : '-'} ${magType}`}
               aria-current={isSelected ? 'true' : undefined}
             >
               <div className="card-top">
@@ -140,13 +156,16 @@ export const EarthquakeList: React.FC<EarthquakeListProps> = ({
                 </div>
 
                 <div className="card-title-block">
-                  <h3 className="card-place-title">
-                    {loc.displayTitle}
-                  </h3>
+                  <div className="card-title-header">
+                    <h3 className="card-place-title">
+                      {loc.displayTitle}
+                    </h3>
+                    {relTime && <span className="badge-rel-time">{relTime}</span>}
+                  </div>
                   <div className="card-time">
-                    <span>🕒 {formatDate(item.occurredAt)}</span>
-                    {loc.isOffshore && <span className="card-env-tag sea">🌊 Açık Deniz</span>}
-                    {loc.isCrossBorder && <span className="card-env-tag border">🌐 Sınır Ötesi</span>}
+                    <span className="time-with-icon"><IconClock size={12} /> {formatDate(item.occurredAt)}</span>
+                    {loc.isOffshore && <span className="card-env-tag sea"><IconSea size={12} /> Açık Deniz</span>}
+                    {loc.isCrossBorder && <span className="card-env-tag border"><IconGlobe size={12} /> Sınır Ötesi</span>}
                   </div>
                 </div>
               </div>
@@ -154,10 +173,6 @@ export const EarthquakeList: React.FC<EarthquakeListProps> = ({
               <div className="card-details">
                 <span className="detail-item">
                   Derinlik: <strong>{item.depthKm !== null ? `${item.depthKm} km` : 'Bilinmiyor'}</strong>
-                </span>
-                <span className="detail-dot">•</span>
-                <span className="detail-item">
-                  Kaynak: <strong>{item.source}</strong>
                 </span>
                 {item.revisionNumber > 1 && (
                   <>
@@ -175,6 +190,7 @@ export const EarthquakeList: React.FC<EarthquakeListProps> = ({
                     e.stopPropagation();
                     onOpenDetail(item);
                   }}
+                  aria-label={`${loc.displayTitle} deprem detaylarını aç, büyüklük ${magVal !== null && magVal !== undefined ? magVal.toFixed(1) : ''} ${magType}`}
                 >
                   Detayları Gör →
                 </button>

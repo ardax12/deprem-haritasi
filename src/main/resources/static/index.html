@@ -36,10 +36,121 @@
     <meta name="format-detection" content="telephone=no" />
     <link rel="manifest" href="/manifest.webmanifest" />
     <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png" />
-    <script type="module" crossorigin src="/assets/index-BtNs2F_g.js"></script>
-    <link rel="stylesheet" crossorigin href="/assets/index-BbR8PBNO.css">
+
+    <!-- Structured Data / Schema.org (JSON-LD) -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@graph": [
+        {
+          "@type": "WebApplication",
+          "@id": "https://deprem-haritasi.onrender.com/#webapp",
+          "name": "Türkiye Deprem Haritası",
+          "alternateName": "AFAD Güncel Deprem İzleme Haritası",
+          "url": "https://deprem-haritasi.onrender.com/",
+          "description": "AFAD verileriyle Türkiye ve yakın çevresindeki güncel depremleri harita ve liste üzerinden takip edin.",
+          "applicationCategory": "UtilitiesApplication",
+          "operatingSystem": "All",
+          "inLanguage": "tr",
+          "offers": {
+            "@type": "Offer",
+            "price": "0",
+            "priceCurrency": "TRY",
+            "url": "https://deprem-haritasi.onrender.com/"
+          }
+        },
+        {
+          "@type": "WebSite",
+          "@id": "https://deprem-haritasi.onrender.com/#website",
+          "url": "https://deprem-haritasi.onrender.com/",
+          "name": "Türkiye Deprem Haritası",
+          "inLanguage": "tr"
+        },
+        {
+          "@type": "FAQPage",
+          "@id": "https://deprem-haritasi.onrender.com/#faq",
+          "mainEntity": [
+            {
+              "@type": "Question",
+              "name": "Türkiye Deprem Haritası verileri nereden alınmaktadır?",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "Haritada sunulan tüm sarsıntı verileri, T.C. İçişleri Bakanlığı Afet ve Acil Durum Yönetimi Başkanlığı (AFAD) Deprem Dairesi Başkanlığı açık servislerinden otomatik olarak çekilmektedir."
+              }
+            },
+            {
+              "@type": "Question",
+              "name": "AFAD ile Kandilli Rasathanesi deprem verileri arasında neden fark olabilir?",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "AFAD ve Kandilli Rasathanesi farklı sismik istasyon ağlarına ve farklı jeolojik hesaplama modellerine sahiptir. Depremin ilk anlarında otomatik hesaplamalar farklılık gösterebilir; sismologların manuel revizyonları sonrasında veriler birbirine yaklaşır."
+              }
+            },
+            {
+              "@type": "Question",
+              "name": "Deprem büyüklük türleri (Mw, ML, Md) ne anlama gelir?",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "Mw (Moment Büyüklüğü), açığa çıkan fiziksel enerjiyi ölçen en güvenilir büyüklük birimidir. ML (Yerel Büyüklük / Richter), yerel sismografların genliğine dayanır. Md (Süreye Bağlı Büyüklük) ise sarsıntı sinyalinin süresinden hesaplanır."
+              }
+            },
+            {
+              "@type": "Question",
+              "name": "Deprem haritası verileri ne sıklıkla güncellenir?",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "Uygulama arka planda 5 dakikada bir otomatik olarak güncellenir. Ayrıca kullanıcılar arayüzdeki 'Yenile' butonunu kullanarak istedikleri an en güncel sarsıntıları sorgulayabilir."
+              }
+            },
+            {
+              "@type": "Question",
+              "name": "Deprem izleme haritası mobil cihazlarda ve çevrimdışı çalışır mı?",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "Evet. Proje Aşamalı Web Uygulaması (PWA) olarak geliştirilmiştir. Akıllı telefonunuza ana ekran uygulaması olarak yüklenebilir ve internet kesintilerinde cihaz hafızasına alınan son depremleri göstermeye devam eder."
+              }
+            }
+          ]
+        }
+      ]
+    }
+    </script>
+    <script type="module" crossorigin src="/assets/index-Scue9mt6.js"></script>
+    <link rel="stylesheet" crossorigin href="/assets/index-DImjgiV2.css">
   </head>
-  <body>
-    <div id="root"></div>
+  <body style="background-color: #0f172a; color: #f8fafc; margin: 0; min-height: 100vh; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale;">
+    <div id="root">
+      <noscript>
+        <div style="max-width: 800px; margin: 40px auto; padding: 24px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; color: #f1f5f9; background: #0f172a; border-radius: 12px;">
+          <h1 style="font-size: 1.5rem; margin-bottom: 12px; color: #38bdf8;">Türkiye Deprem Haritası ve Güncel Depremler | AFAD Verileri</h1>
+          <p style="line-height: 1.6; color: #cbd5e1;">AFAD verileriyle Türkiye ve yakın çevresindeki en güncel sismik hareketliliği harita ve liste üzerinden takip edin.</p>
+          <p style="line-height: 1.6; color: #94a3b8;">İnteraktif harita deneyimi için lütfen tarayıcınızda JavaScript'i etkinleştirin.</p>
+        </div>
+      </noscript>
+      <div id="crawler-fallback" style="max-width: 800px; margin: 0 auto; padding: 24px; background-color: #0f172a; color: #f8fafc; display: block;">
+        <header style="margin-bottom: 24px;">
+          <h1 style="font-size: 1.5rem; font-weight: 700; color: #f8fafc; margin-bottom: 8px;">Türkiye Deprem Haritası ve Güncel Depremler</h1>
+          <p style="color: #94a3b8; font-size: 0.95rem; line-height: 1.5;">AFAD verileriyle Türkiye ve yakın çevresindeki güncel depremleri interaktif harita ve anlık liste üzerinden takip edin.</p>
+        </header>
+        <section style="margin-bottom: 24px; background: #1e293b; padding: 16px; border-radius: 8px; border: 1px solid #334155;">
+          <h2 style="font-size: 1.1rem; color: #38bdf8; margin-bottom: 8px;">Canlı ve Açık Sismik Takip</h2>
+          <p style="color: #cbd5e1; font-size: 0.875rem; line-height: 1.6;">Bu harita, AFAD Deprem Dairesi Başkanlığı verilerini periyodik olarak tarayarak büyüklük, derinlik ve koordinat bilgilerini filtreleme seçenekleriyle sunar.</p>
+        </section>
+        <section style="margin-bottom: 24px;">
+          <h2 style="font-size: 1.1rem; color: #38bdf8; margin-bottom: 12px;">Sıkça Sorulan Sorular</h2>
+          <article style="margin-bottom: 12px;">
+            <h3 style="font-size: 0.95rem; color: #f1f5f9; margin-bottom: 4px;">Deprem verileri nereden temin ediliyor?</h3>
+            <p style="color: #94a3b8; font-size: 0.875rem; line-height: 1.5;">Veriler doğrudan AFAD resmi açık servislerinden anlık olarak çekilmektedir.</p>
+          </article>
+          <article style="margin-bottom: 12px;">
+            <h3 style="font-size: 0.95rem; color: #f1f5f9; margin-bottom: 4px;">Büyüklük ölçekleri (Mw, ML) neyi ifade eder?</h3>
+            <p style="color: #94a3b8; font-size: 0.875rem; line-height: 1.5;">Mw fiziksel enerji miktarını temsil eder ve en güvenilir ölçümdür. ML ise sismograf genliğine dayalı yerel büyüklüktür.</p>
+          </article>
+        </section>
+        <div style="display: flex; align-items: center; justify-content: center; padding: 24px; color: #94a3b8; font-size: 0.875rem;">
+          <span>Harita bileşenleri yükleniyor...</span>
+        </div>
+      </div>
+    </div>
   </body>
 </html>
