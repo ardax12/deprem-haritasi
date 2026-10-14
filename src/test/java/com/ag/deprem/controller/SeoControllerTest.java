@@ -50,7 +50,7 @@ class SeoControllerTest {
                 .andExpect(content().string(containsString("User-agent: Google-Extended")))
                 .andExpect(content().string(containsString("User-agent: GPTBot")))
                 .andExpect(content().string(containsString("User-agent: PerplexityBot")))
-                .andExpect(content().string(containsString("Sitemap: https://depremizleme.com/sitemap.xml")));
+                .andExpect(content().string(containsString("Sitemap: http://localhost/sitemap.xml")));
     }
 
     @Test
@@ -65,5 +65,12 @@ class SeoControllerTest {
     void getIndexNowKeyFile_invalidKeyReturns404() throws Exception {
         mockMvc.perform(get("/nonexistent-invalid-key.txt"))
                 .andExpect(status().isNotFound());
+    }
+
+    @Test
+    void getProvinceRoute_forwardsToIndexHtml() throws Exception {
+        mockMvc.perform(get("/son-depremler/istanbul"))
+                .andExpect(status().isOk())
+                .andExpect(forwardedUrl("/index.html"));
     }
 }

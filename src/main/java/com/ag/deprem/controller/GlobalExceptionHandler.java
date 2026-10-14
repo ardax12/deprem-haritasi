@@ -84,6 +84,14 @@ public class GlobalExceptionHandler {
         return problem;
     }
 
+    @ExceptionHandler(org.springframework.web.servlet.resource.NoResourceFoundException.class)
+    public ProblemDetail handleNoResourceFound(org.springframework.web.servlet.resource.NoResourceFoundException e) {
+        ProblemDetail problem = ProblemDetail.forStatusAndDetail(HttpStatus.NOT_FOUND, "İstenen kaynak bulunamadı: " + e.getResourcePath());
+        problem.setTitle("Kaynak Bulunamadı");
+        problem.setType(URI.create("urn:deprem:not-found"));
+        return problem;
+    }
+
     @ExceptionHandler(Exception.class)
     public ProblemDetail handleGenericException(Exception e) {
         String errorId = UUID.randomUUID().toString();

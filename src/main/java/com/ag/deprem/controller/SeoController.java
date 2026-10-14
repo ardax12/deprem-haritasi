@@ -1,6 +1,7 @@
 package com.ag.deprem.controller;
 
 import com.ag.deprem.service.IndexNowService;
+import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
@@ -19,7 +20,7 @@ public class SeoController {
 
     private final IndexNowService indexNowService;
 
-    @Value("${app.site.base-url:https://depremizleme.com}")
+    @Value("${app.site.base-url:}")
     private String baseUrl;
 
     public static final List<String> TURKISH_PROVINCE_SLUGS = List.of(
@@ -38,8 +39,8 @@ public class SeoController {
     }
 
     @GetMapping(value = "/sitemap.xml", produces = MediaType.APPLICATION_XML_VALUE)
-    public ResponseEntity<String> getSitemap() {
-        String cleanBase = baseUrl.replaceAll("/+$", "");
+    public ResponseEntity<String> getSitemap(HttpServletRequest request) {
+        String cleanBase = resolveBaseUrl(request);
         String nowIso = Instant.now().truncatedTo(ChronoUnit.SECONDS).toString();
 
         StringBuilder xml = new StringBuilder();
@@ -74,8 +75,8 @@ public class SeoController {
     }
 
     @GetMapping(value = "/robots.txt", produces = MediaType.TEXT_PLAIN_VALUE)
-    public ResponseEntity<String> getRobotsTxt() {
-        String cleanBase = baseUrl.replaceAll("/+$", "");
+    public ResponseEntity<String> getRobotsTxt(HttpServletRequest request) {
+        String cleanBase = resolveBaseUrl(request);
 
         StringBuilder robots = new StringBuilder();
         robots.append("User-agent: *\n");
@@ -116,5 +117,36 @@ public class SeoController {
                     .body(key);
         }
         return ResponseEntity.notFound().build();
+    }
+
+    private String resolveBaseUrl(HttpServletRequest request) {
+        if (baseUrl != null && !baseUrl.isBlank() && !baseUrl.contains("depremizleme.com")) {
+            return baseUrl.replaceAll("/+$", "");
+        }
+
+        String proto = request.getHeader("X-Forwarded-Proto");
+        if (proto == null || proto.isBlank()) {
+            proto = request.getScheme();
+        }
+
+        String host = request.getHeader("X-Forwarded-Host");
+        if (host == null || host.isBlank()) {
+            host = request.getHeader("Host");
+        }
+        if (host == null || host.isBlank()) {
+            host = request.getServerName();
+            int port = request.getServerPort();
+            if (port != 80 && port != 443) {
+                host = host + ":" + port;
+            }
+        }
+
+        if (host.endsWith(":80") && "http".equalsIgnoreCase(proto)) {
+            host = host.substring(0, host.length() - 3);
+        } else if (host.endsWith(":443") && "https".equalsIgnoreCase(proto)) {
+            host = host.substring(0, host.length() - 4);
+        }
+
+        return proto + "://" + host;
     }
 }
