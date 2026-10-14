@@ -6,6 +6,9 @@ import { EarthquakeList } from './components/EarthquakeList';
 import { EarthquakeDetailModal } from './components/EarthquakeDetailModal';
 import { InfoModal } from './components/InfoModal';
 import { IconMap, IconList, IconWifiOff, IconAlertTriangle } from './components/Icons';
+import { AiSummarySnippet } from './components/AiSummarySnippet';
+import { findProvinceBySlug, type ProvinceData } from './data/provinces';
+import { useSeo } from './hooks/useSeo';
 import type { EarthquakeItem, FilterParams, Freshness, PageInfo, EarthquakeDetail } from './types/earthquake';
 import { fetchEarthquakes, fetchEarthquakeDetail, computeTimeWindow, type TimeWindow } from './services/api';
 import './App.css';
@@ -17,8 +20,22 @@ const defaultFilters: FilterParams = {
   sortBy: 'occurredAt:desc'
 };
 
+const getInitialProvince = (): ProvinceData | null => {
+  if (typeof window === 'undefined') return null;
+  const path = window.location.pathname;
+  const match = path.match(/^\/son-depremler\/([a-z0-9-]+)/i);
+  if (match) {
+    return findProvinceBySlug(match[1]) || null;
+  }
+  return null;
+};
+
 export function App() {
-  const [filters, setFilters] = useState<FilterParams>(defaultFilters);
+  const [activeProvince, setActiveProvince] = useState<ProvinceData | null>(getInitialProvince);
+  const [filters, setFilters] = useState<FilterParams>(() => {
+    const initProv = getInitialProvince();
+    return initProv ? { ...defaultFilters, place: initProv.name } : defaultFilters;
+  });
   const [items, setItems] = useState<EarthquakeItem[]>([]);
   const [pageInfo, setPageInfo] = useState<PageInfo | null>(null);
   const [freshness, setFreshness] = useState<Freshness | undefined>(undefined);
@@ -238,11 +255,21 @@ export function App() {
   };
 
   const handleFilterChange = (updated: Partial<FilterParams>) => {
+    if (updated.place !== undefined && updated.place.trim() === '') {
+      setActiveProvince(null);
+      if (typeof window !== 'undefined' && window.location.pathname.startsWith('/son-depremler')) {
+        window.history.pushState({}, '', '/');
+      }
+    }
     setFilters(prev => ({ ...prev, ...updated }));
   };
 
   const handleFilterReset = () => {
     setFilters(defaultFilters);
+    setActiveProvince(null);
+    if (typeof window !== 'undefined' && window.location.pathname.startsWith('/son-depremler')) {
+      window.history.pushState({}, '', '/');
+    }
   };
 
   const handleSelectItem = (item: EarthquakeItem) => {
@@ -274,6 +301,13 @@ export function App() {
   const totalCount = pageInfo ? pageInfo.totalElements : items.length;
   const hasMore = pageInfo ? items.length < pageInfo.totalElements : false;
 
+  useSeo({
+    provinceName: activeProvince?.name,
+    activeItem: selectedItem,
+    totalCount,
+    latestItem: items[0]
+  });
+
   return (
     <div className="app-container">
       <Header
@@ -301,6 +335,12 @@ export function App() {
         onReset={handleFilterReset}
         itemsCount={items.length}
         totalCount={totalCount}
+      />
+
+      <AiSummarySnippet
+        items={items}
+        totalCount={totalCount}
+        provinceName={activeProvince?.name}
       />
 
       {error && (

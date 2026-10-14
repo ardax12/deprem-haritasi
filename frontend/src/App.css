@@ -439,6 +439,50 @@ body {
   outline-offset: 1px;
 }
 
+/* AI SUMMARY SNIPPET (GEO / CITATION BANNER) */
+.ai-summary-snippet {
+  background-color: #0b1120;
+  border-bottom: 1px solid var(--border-color);
+  padding: 6px 20px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 0.8125rem;
+  line-height: 1.4;
+  flex-shrink: 0;
+}
+
+.ai-summary-badge {
+  background-color: rgba(96, 165, 250, 0.15);
+  border: 1px solid rgba(96, 165, 250, 0.35);
+  color: #60a5fa;
+  font-size: 0.6875rem;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 9999px;
+  white-space: nowrap;
+  flex-shrink: 0;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.ai-summary-text {
+  margin: 0;
+  flex: 1;
+  color: #94a3b8;
+}
+
+.ai-summary-text strong {
+  color: #f1f5f9;
+  font-weight: 600;
+}
+
+.ai-summary-text em {
+  color: #93c5fd;
+  font-style: normal;
+  font-weight: 500;
+}
+
 /* ERROR BANNER */
 .global-error-banner {
   background-color: rgba(220, 38, 38, 0.2);
