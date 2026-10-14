@@ -24,6 +24,10 @@ public class NormalizedReportDto {
     private String normalizedHash;
     private boolean valid;
     private List<String> dataQualityNotes = new ArrayList<>();
+    private String solutionQuality;
+    private Double magMd;
+    private Double magMl;
+    private Double magMw;
 
     public NormalizedReportDto() {
     }
@@ -178,5 +182,37 @@ public class NormalizedReportDto {
 
     public void setDataQualityNotes(List<String> dataQualityNotes) {
         this.dataQualityNotes = dataQualityNotes;
+    }
+
+    public String getSolutionQuality() {
+        return solutionQuality;
+    }
+
+    public void setSolutionQuality(String solutionQuality) {
+        this.solutionQuality = solutionQuality;
+    }
+
+    public Double getMagMd() {
+        return magMd;
+    }
+
+    public void setMagMd(Double magMd) {
+        this.magMd = magMd;
+    }
+
+    public Double getMagMl() {
+        return magMl;
+    }
+
+    public void setMagMl(Double magMl) {
+        this.magMl = magMl;
+    }
+
+    public Double getMagMw() {
+        return magMw;
+    }
+
+    public void setMagMw(Double magMw) {
+        this.magMw = magMw;
     }
 }

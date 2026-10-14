@@ -46,6 +46,9 @@ export async function fetchEarthquakes(
   if (filters.magnitudeType && filters.magnitudeType !== 'ALL') {
     query.set('magnitudeType', filters.magnitudeType.trim());
   }
+  if (filters.source && filters.source !== 'ALL') {
+    query.set('source', filters.source.trim());
+  }
   if (filters.place && filters.place.trim().length > 0) {
     query.set('place', filters.place.trim());
   }

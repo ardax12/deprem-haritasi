@@ -144,19 +144,31 @@ export const InfoModal: React.FC<InfoModalProps> = ({ isOpen, onClose }) => {
           {activeTab === 'source' && (
             <div id="panel-source" role="tabpanel" aria-labelledby="tab-source" className="info-tab-panel">
               <div className="info-section">
-                <h3 className="info-section-title">AFAD Açık Veri Entegrasyonu</h3>
+                <h3 className="info-section-title">Çoklu Kaynak Açık Veri Entegrasyonu (AFAD & Kandilli)</h3>
                 <p className="info-text">
-                  Uygulamamızdaki tüm deprem bilgileri, <strong>T.C. İçişleri Bakanlığı Afet ve Acil Durum Yönetimi Başkanlığı (AFAD)</strong> Deprem Dairesi Başkanlığı’nın kamuya açık API servislerinden doğrudan çekilmektedir.
+                  Uygulamamızdaki sismik veriler, Türkiye'nin iki yetkili sismoloji merkezinin kamuya açık bültenlerinden otomatik olarak derlenmektedir:
                 </p>
+                <ul className="info-text" style={{ paddingLeft: '20px', marginTop: '6px' }}>
+                  <li><strong>AFAD:</strong> T.C. İçişleri Bakanlığı Afet ve Acil Durum Yönetimi Başkanlığı Deprem Dairesi API servisi.</li>
+                  <li><strong>Kandilli (KOERI-BDTİM):</strong> Boğaziçi Üniversitesi Kandilli Rasathanesi ve Deprem Araştırma Enstitüsü Bölgesel Deprem-Tsunami İzleme ve Değerlendirme Merkezi hızlı çözümler bülteni.</li>
+                </ul>
                 <p className="info-text">
-                  Sunucumuz verileri her <strong>5 dakikada bir</strong> otomatik olarak tarar; yeni veya revize edilmiş depremleri veri tabanına işler ve anlık olarak haritanıza iletir.
+                  Sunucumuz her iki kaynağı periyodik olarak sorgular; gelen yeni veya revize edilmiş depremleri veri tabanına işler. Farklı kaynakların aynı fiziksel sarsıntıyı bildirdiği durumlar gelişmiş jeodezik mesafe ve zaman korelasyonu algoritmasıyla eşleştirilerek kullanıcılara şeffafça sunulur.
                 </p>
               </div>
 
               <div className="info-highlight-box">
+                <h4 className="info-highlight-title">Kandilli Resmi Kaynak Atfı</h4>
+                <p className="info-text-sm">
+                  Kaynak: Boğaziçi Üniversitesi Kandilli Rasathanesi ve Deprem Araştırma Enstitüsü, Bölgesel Deprem-Tsunami İzleme ve Değerlendirme Merkezi (KOERI-BDTİM).
+                  Veriler bilimsel ve kamu bilgilendirme amaçlı açık verilerden aktarılmaktadır.
+                </p>
+              </div>
+
+              <div className="info-highlight-box" style={{ marginTop: '12px' }}>
                 <h4 className="info-highlight-title">Bağımsız İzleme Güvencesi</h4>
                 <p className="info-text-sm">
-                  Bu uygulama resmi bir kamu kurumu uygulaması değildir; AFAD açık verilerini toplumun hızlı, sade ve anlaşılır şekilde takip edebilmesi için geliştirilmiş bağımsız bir sismik izleme aracıdır.
+                  Bu uygulama resmi bir kamu kurumu uygulaması değildir; AFAD ve Kandilli açık verilerini toplumun hızlı, sade ve anlaşılır şekilde takip edebilmesi için geliştirilmiş bağımsız bir sismik izleme ve arşiv aracıdır.
                 </p>
               </div>
 
@@ -289,16 +301,27 @@ export const InfoModal: React.FC<InfoModalProps> = ({ isOpen, onClose }) => {
           )}
         </div>
 
-        <div className="modal-footer">
-          <a
-            href="https://deprem.afad.gov.tr"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="external-link"
-            style={{ fontSize: '0.8125rem' }}
-          >
-            AFAD Resmi Deprem Dairesi →
-          </a>
+        <div className="modal-footer" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '8px' }}>
+          <div style={{ display: 'flex', gap: '14px', flexWrap: 'wrap' }}>
+            <a
+              href="https://deprem.afad.gov.tr"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="external-link"
+              style={{ fontSize: '0.8125rem' }}
+            >
+              AFAD Deprem Dairesi ↗
+            </a>
+            <a
+              href="http://www.koeri.boun.edu.tr/scripts/lst0.asp"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="external-link"
+              style={{ fontSize: '0.8125rem' }}
+            >
+              Kandilli KOERI-BDTİM ↗
+            </a>
+          </div>
           <button type="button" className="btn-modal-primary" onClick={onClose}>
             Anladım, Kapat
           </button>

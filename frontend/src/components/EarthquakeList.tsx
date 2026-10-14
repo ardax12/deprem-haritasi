@@ -176,9 +176,27 @@ export const EarthquakeList: React.FC<EarthquakeListProps> = ({
               </div>
 
               <div className="card-details">
+                <span className={`source-tag ${item.source === 'KOERI' ? 'tag-koeri' : 'tag-afad'}`}>
+                  {item.source === 'KOERI' ? 'Kandilli' : 'AFAD'}
+                </span>
+                <span className="detail-dot">•</span>
                 <span className="detail-item">
                   Derinlik: <strong>{item.depthKm !== null ? `${item.depthKm} km` : 'Bilinmiyor'}</strong>
                 </span>
+                {item.solutionQuality && (
+                  <>
+                    <span className="detail-dot">•</span>
+                    <span className="detail-quality-badge">{item.solutionQuality}</span>
+                  </>
+                )}
+                {item.matchStatus === 'AUTO_MATCHED' && (
+                  <>
+                    <span className="detail-dot">•</span>
+                    <span className="detail-matched-badge" title="AFAD ve Kandilli bültenleriyle karşılıklı doğrulanmış olay">
+                      ✓ Doğrulanmış Eşleşme
+                    </span>
+                  </>
+                )}
                 {item.revisionNumber > 1 && (
                   <>
                     <span className="detail-dot">•</span>

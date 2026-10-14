@@ -117,7 +117,8 @@ export const EarthquakeMap: React.FC<EarthquakeMapProps> = ({
     const srcSpan = document.createElement('span');
     srcSpan.textContent = 'Kaynak: ';
     const srcStrong = document.createElement('strong');
-    srcStrong.textContent = item.source || 'AFAD';
+    const sourceLabel = item.source === 'KOERI' ? 'Kandilli (KOERI)' : 'AFAD';
+    srcStrong.textContent = item.solutionQuality ? `${sourceLabel} (${item.solutionQuality})` : sourceLabel;
     srcRow.appendChild(srcSpan);
     srcRow.appendChild(srcStrong);
     popupContent.appendChild(srcRow);

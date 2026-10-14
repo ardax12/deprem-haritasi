@@ -33,6 +33,7 @@ public class EarthquakeController {
             @RequestParam(required = false) Double maxDepthKm,
             @RequestParam(required = false) String bbox,
             @RequestParam(required = false) String place,
+            @RequestParam(required = false) String source,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "100") int pageSize,
             @RequestParam(required = false) String sort) {
@@ -47,7 +48,7 @@ public class EarthquakeController {
 
         EarthquakesListResponseDto response = queryService.queryEarthquakes(
                 start, end, minMagnitude, maxMagnitude, magnitudeType,
-                minDepthKm, maxDepthKm, bbox, place, page, boundedPageSize, sort
+                minDepthKm, maxDepthKm, bbox, place, source, page, boundedPageSize, sort
         );
 
         return ResponseEntity.ok()

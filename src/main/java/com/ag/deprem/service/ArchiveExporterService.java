@@ -30,8 +30,8 @@ import java.util.*;
 public class ArchiveExporterService {
 
     private static final Logger log = LoggerFactory.getLogger(ArchiveExporterService.class);
-    private static final String SCHEMA_VERSION = "1.0";
-    private static final String SOURCE_COVERAGE = "AFAD";
+    private static final String SCHEMA_VERSION = "2.0";
+    private static final String SOURCE_COVERAGE = "AFAD,KOERI";
 
     private final SourceReportRevisionRepository revisionRepository;
     private final ArchiveManifestRepository manifestRepository;
@@ -268,6 +268,10 @@ public class ArchiveExporterService {
         dto.setNeighborhood(rev.getNeighborhood());
         dto.setSource(report.getSource());
         dto.setRevisionNumber(rev.getRevisionNumber());
+        dto.setSolutionQuality(rev.getSolutionQuality());
+        dto.setMagMd(rev.getMagMd());
+        dto.setMagMl(rev.getMagMl());
+        dto.setMagMw(rev.getMagMw());
         return dto;
     }
 }

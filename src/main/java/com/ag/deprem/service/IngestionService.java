@@ -1,6 +1,7 @@
 package com.ag.deprem.service;
 
 import com.ag.deprem.model.dto.AfadRawEventDto;
+import com.ag.deprem.model.dto.KoeriRawEventDto;
 import com.ag.deprem.model.dto.NormalizedReportDto;
 import com.ag.deprem.model.entity.SourceReport;
 import com.ag.deprem.model.entity.SourceReportRevision;
@@ -12,6 +13,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -23,14 +25,20 @@ public class IngestionService {
 
     private final SourceReportRepository sourceReportRepository;
     private final SourceReportRevisionRepository revisionRepository;
-    private final AfadDataNormalizer normalizer;
+    private final AfadDataNormalizer afadNormalizer;
+    private final KoeriDataNormalizer koeriNormalizer;
+    private final EventMatchingService matchingService;
 
     public IngestionService(SourceReportRepository sourceReportRepository,
                             SourceReportRevisionRepository revisionRepository,
-                            AfadDataNormalizer normalizer) {
+                            AfadDataNormalizer afadNormalizer,
+                            KoeriDataNormalizer koeriNormalizer,
+                            EventMatchingService matchingService) {
         this.sourceReportRepository = sourceReportRepository;
         this.revisionRepository = revisionRepository;
-        this.normalizer = normalizer;
+        this.afadNormalizer = afadNormalizer;
+        this.koeriNormalizer = koeriNormalizer;
+        this.matchingService = matchingService;
     }
 
     public static class IngestionSummary {
@@ -55,22 +63,77 @@ public class IngestionService {
 
     @Transactional
     public IngestionSummary ingestAfadEvents(List<AfadRawEventDto> rawEvents) {
-        IngestionSummary summary = new IngestionSummary();
         if (rawEvents == null || rawEvents.isEmpty()) {
-            return summary;
+            return new IngestionSummary();
         }
-
-        Instant now = Instant.now();
+        List<NormalizedReportDto> normalized = new ArrayList<>();
+        IngestionSummary summary = new IngestionSummary();
 
         for (AfadRawEventDto raw : rawEvents) {
             summary.total++;
-            NormalizedReportDto dto = normalizer.normalize(raw);
-
+            NormalizedReportDto dto = afadNormalizer.normalize(raw);
             if (dto == null || !dto.isValid()) {
                 summary.rejected++;
                 log.warn("Rejected invalid AFAD record: ID='{}', reasons={}",
                         raw != null ? raw.getEventId() : "null",
                         dto != null ? dto.getDataQualityNotes() : "null");
+            } else {
+                normalized.add(dto);
+            }
+        }
+
+        IngestionSummary inner = ingestReports("AFAD", normalized);
+        summary.inserted = inner.inserted;
+        summary.updated = inner.updated;
+        summary.unchanged = inner.unchanged;
+
+        log.info("AFAD ingestion completed: {}", summary);
+        return summary;
+    }
+
+    @Transactional
+    public IngestionSummary ingestKoeriEvents(List<KoeriRawEventDto> rawEvents) {
+        if (rawEvents == null || rawEvents.isEmpty()) {
+            return new IngestionSummary();
+        }
+        List<NormalizedReportDto> normalized = new ArrayList<>();
+        IngestionSummary summary = new IngestionSummary();
+
+        for (KoeriRawEventDto raw : rawEvents) {
+            summary.total++;
+            NormalizedReportDto dto = koeriNormalizer.normalize(raw);
+            if (dto == null || !dto.isValid()) {
+                summary.rejected++;
+                log.warn("Rejected invalid KOERI record: line='{}', reasons={}",
+                        raw != null ? raw.getRawLine() : "null",
+                        dto != null ? dto.getDataQualityNotes() : "null");
+            } else {
+                normalized.add(dto);
+            }
+        }
+
+        IngestionSummary inner = ingestReports("KOERI", normalized);
+        summary.inserted = inner.inserted;
+        summary.updated = inner.updated;
+        summary.unchanged = inner.unchanged;
+
+        log.info("KOERI ingestion completed: {}", summary);
+        return summary;
+    }
+
+    @Transactional
+    public IngestionSummary ingestReports(String source, List<NormalizedReportDto> reports) {
+        IngestionSummary summary = new IngestionSummary();
+        if (reports == null || reports.isEmpty()) {
+            return summary;
+        }
+
+        Instant now = Instant.now();
+
+        for (NormalizedReportDto dto : reports) {
+            summary.total++;
+            if (dto == null || !dto.isValid()) {
+                summary.rejected++;
                 continue;
             }
 
@@ -94,6 +157,13 @@ public class IngestionService {
                 sourceReportRepository.save(report);
                 revisionRepository.save(revision);
                 summary.inserted++;
+
+                try {
+                    matchingService.evaluateMatchesForReport(report, revision);
+                } catch (Exception e) {
+                    log.warn("Matching evaluation failed for new report {}:{}: {}",
+                            report.getSource(), report.getSourceEventId(), e.getMessage());
+                }
             } else {
                 SourceReport report = existingOpt.get();
                 report.setLastSeenAt(now);
@@ -119,11 +189,17 @@ public class IngestionService {
                     sourceReportRepository.save(report);
                     revisionRepository.save(newRevision);
                     summary.updated++;
+
+                    try {
+                        matchingService.handleRevisionChange(report, newRevision);
+                    } catch (Exception e) {
+                        log.warn("Matching re-evaluation failed for revised report {}:{}: {}",
+                                report.getSource(), report.getSourceEventId(), e.getMessage());
+                    }
                 }
             }
         }
 
-        log.info("AFAD ingestion completed: {}", summary);
         return summary;
     }
 
@@ -146,6 +222,10 @@ public class IngestionService {
         rev.setSourcePayloadHash(dto.getSourcePayloadHash());
         rev.setNormalizedHash(dto.getNormalizedHash());
         rev.setObservedAt(now);
+        rev.setSolutionQuality(dto.getSolutionQuality());
+        rev.setMagMd(dto.getMagMd());
+        rev.setMagMl(dto.getMagMl());
+        rev.setMagMw(dto.getMagMw());
         return rev;
     }
 }

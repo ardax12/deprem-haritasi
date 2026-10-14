@@ -26,6 +26,12 @@ public class EarthquakeItemDto {
     private String nearestSettlement;
     private String environment;
     private String displayLocation;
+    private String solutionQuality;
+    private Double magMd;
+    private Double magMl;
+    private Double magMw;
+    private String matchStatus;
+    private String matchedEventId;
 
     public EarthquakeItemDto() {
     }
@@ -92,4 +98,22 @@ public class EarthquakeItemDto {
 
     public String getDisplayLocation() { return displayLocation; }
     public void setDisplayLocation(String displayLocation) { this.displayLocation = displayLocation; }
+
+    public String getSolutionQuality() { return solutionQuality; }
+    public void setSolutionQuality(String solutionQuality) { this.solutionQuality = solutionQuality; }
+
+    public Double getMagMd() { return magMd; }
+    public void setMagMd(Double magMd) { this.magMd = magMd; }
+
+    public Double getMagMl() { return magMl; }
+    public void setMagMl(Double magMl) { this.magMl = magMl; }
+
+    public Double getMagMw() { return magMw; }
+    public void setMagMw(Double magMw) { this.magMw = magMw; }
+
+    public String getMatchStatus() { return matchStatus; }
+    public void setMatchStatus(String matchStatus) { this.matchStatus = matchStatus; }
+
+    public String getMatchedEventId() { return matchedEventId; }
+    public void setMatchedEventId(String matchedEventId) { this.matchedEventId = matchedEventId; }
 }

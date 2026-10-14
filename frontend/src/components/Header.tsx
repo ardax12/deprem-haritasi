@@ -58,11 +58,14 @@ export const Header: React.FC<HeaderProps> = ({
       <div className="header-disclaimer-banner" role="region" aria-label="Resmi Bilgilendirme Notu">
         <span className="disclaimer-icon"><IconInfo size={15} /></span>
         <span>
-          <strong>Resmi Bilgilendirme Notu:</strong> Bu uygulama kamuya açık bir izleme aracıdır; resmi erken uyarı veya acil durum hizmeti değildir.
-          Veriler kaynaklardan gecikmeli veya revizyonlu iletilebilir. Resmi ve anlık bilgi için lütfen{' '}
+          <strong>Bilgilendirme Notu:</strong> Bu uygulama bağımsız bir açık veri izleme aracıdır; resmi acil durum hizmeti değildir.
+          Veriler{' '}
           <a href="https://deprem.afad.gov.tr" target="_blank" rel="noopener noreferrer" className="external-link">
-            AFAD Resmi Portalı
-          </a>'nı takip edin.
+            AFAD
+          </a>{' '}ve{' '}
+          <a href="http://www.koeri.boun.edu.tr/scripts/lst0.asp" target="_blank" rel="noopener noreferrer" className="external-link">
+            Kandilli Rasathanesi (KOERI-BDTİM)
+          </a>{' '}kamuya açık bültenlerinden derlenmektedir.
         </span>
       </div>
 
@@ -73,13 +76,13 @@ export const Header: React.FC<HeaderProps> = ({
           </div>
           <div>
             <h1 className="header-title">Türkiye Deprem İzleme Haritası</h1>
-            <p className="header-subtitle">Güvenilir AFAD Kaynaklı Açık Deprem Kataloğu • {countDisplay} Olay Listelendi</p>
+            <p className="header-subtitle">AFAD & Kandilli Açık Deprem Kataloğu • {countDisplay} Olay Listelendi</p>
           </div>
         </div>
 
         <div className="header-actions">
           <div className="status-indicators">
-            <span className="source-label">Kaynak: <strong>AFAD</strong></span>
+            <span className="source-label">Kaynaklar: <strong>AFAD & Kandilli</strong></span>
             {getStatusBadge()}
             <span className="last-sync-time">
               Son Kontrol: {formatLastFetch(freshness?.lastSuccessfulFetchAt)}

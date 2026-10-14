@@ -25,6 +25,12 @@ export interface EarthquakeItem {
   nearestSettlement?: string | null;
   environment?: 'offshore' | 'land' | 'cross_border' | string | null;
   displayLocation?: string | null;
+  solutionQuality?: string | null;
+  magMd?: number | null;
+  magMl?: number | null;
+  magMw?: number | null;
+  matchStatus?: string | null;
+  matchedEventId?: string | null;
 }
 
 export interface PageInfo {
@@ -50,6 +56,10 @@ export interface EarthquakesResponse {
 export interface EarthquakeDetail {
   current: EarthquakeItem;
   history: EarthquakeItem[];
+  matchedPartner?: EarthquakeItem | null;
+  matchStatus?: string | null;
+  matchReason?: string | null;
+  matchScore?: number | null;
 }
 
 export interface SourceCoverage {
@@ -76,6 +86,7 @@ export interface FilterParams {
   timeRange: '24h' | '3d' | '7d' | '30d';
   minMagnitude: number | null;
   magnitudeType?: string;
+  source?: 'ALL' | 'AFAD' | 'KOERI';
   place: string;
   sortBy: 'occurredAt:desc' | 'magnitude:desc';
 }

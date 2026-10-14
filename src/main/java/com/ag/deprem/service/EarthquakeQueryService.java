@@ -1,8 +1,10 @@
 package com.ag.deprem.service;
 
 import com.ag.deprem.model.dto.*;
+import com.ag.deprem.model.entity.EventMatch;
 import com.ag.deprem.model.entity.SourceReport;
 import com.ag.deprem.model.entity.SourceReportRevision;
+import com.ag.deprem.repository.EventMatchRepository;
 import com.ag.deprem.repository.SourceReportRepository;
 import com.ag.deprem.repository.SourceReportRevisionRepository;
 import jakarta.persistence.criteria.Expression;
@@ -30,15 +32,18 @@ public class EarthquakeQueryService {
 
     private final SourceReportRevisionRepository revisionRepository;
     private final SourceReportRepository reportRepository;
+    private final EventMatchRepository matchRepository;
     private final SourceStatusTracker statusTracker;
     private final LocationParser locationParser;
 
     public EarthquakeQueryService(SourceReportRevisionRepository revisionRepository,
                                   SourceReportRepository reportRepository,
+                                  EventMatchRepository matchRepository,
                                   SourceStatusTracker statusTracker,
                                   LocationParser locationParser) {
         this.revisionRepository = revisionRepository;
         this.reportRepository = reportRepository;
+        this.matchRepository = matchRepository;
         this.statusTracker = statusTracker;
         this.locationParser = locationParser;
     }
@@ -52,6 +57,7 @@ public class EarthquakeQueryService {
                                                        Double maxDepthKm,
                                                        String bbox,
                                                        String place,
+                                                       String source,
                                                        int page,
                                                        int pageSize,
                                                        String sortParam) {
@@ -80,6 +86,11 @@ public class EarthquakeQueryService {
             // Time range: occurredAt >= start and occurredAt < end
             predicates.add(cb.greaterThanOrEqualTo(root.get("occurredAt"), effectiveStart));
             predicates.add(cb.lessThan(root.get("occurredAt"), effectiveEnd));
+
+            // Source filter
+            if (source != null && !source.isBlank() && !"ALL".equalsIgnoreCase(source.trim())) {
+                predicates.add(cb.equal(cb.upper(root.get("sourceReport").get("source")), source.trim().toUpperCase()));
+            }
 
             // Magnitude filters
             if (minMagnitude != null) {
@@ -157,6 +168,22 @@ public class EarthquakeQueryService {
         return new EarthquakesListResponseDto(items, pageInfo, freshness);
     }
 
+    public EarthquakesListResponseDto queryEarthquakes(Instant start,
+                                                       Instant end,
+                                                       Double minMagnitude,
+                                                       Double maxMagnitude,
+                                                       String magnitudeType,
+                                                       Double minDepthKm,
+                                                       Double maxDepthKm,
+                                                       String bbox,
+                                                       String place,
+                                                       int page,
+                                                       int pageSize,
+                                                       String sortParam) {
+        return queryEarthquakes(start, end, minMagnitude, maxMagnitude, magnitudeType,
+                minDepthKm, maxDepthKm, bbox, place, null, page, pageSize, sortParam);
+    }
+
     public Optional<EarthquakeDetailDto> getEarthquakeDetail(String idStr) {
         Optional<SourceReport> reportOpt = findReportByIdString(idStr);
         if (reportOpt.isEmpty()) {
@@ -176,47 +203,96 @@ public class EarthquakeQueryService {
                 .map(this::mapToItemDto)
                 .toList();
 
-        return Optional.of(new EarthquakeDetailDto(currentDto, history));
+        EarthquakeDetailDto detail = new EarthquakeDetailDto(currentDto, history);
+
+        // Find active matches
+        List<EventMatch> matches = matchRepository.findAllByReportId(report.getId());
+        for (EventMatch m : matches) {
+            if ("AUTO_MATCHED".equals(m.getStatus()) || "MANUAL_MATCHED".equals(m.getStatus())) {
+                SourceReport partner = m.getLeftReport().getId().equals(report.getId()) ? m.getRightReport() : m.getLeftReport();
+                Optional<SourceReportRevision> partnerRevOpt = revisionRepository
+                        .findFirstBySourceReportIdOrderByRevisionNumberDesc(partner.getId());
+
+                if (partnerRevOpt.isPresent()) {
+                    detail.setMatchedPartner(mapToItemDto(partnerRevOpt.get()));
+                    detail.setMatchStatus(m.getStatus());
+                    detail.setMatchReason(m.getDecisionReason());
+                    detail.setMatchScore(m.getScore());
+                    currentDto.setMatchStatus(m.getStatus());
+                    currentDto.setMatchedEventId(partner.getSource().toLowerCase() + ":" + partner.getSourceEventId());
+                    break;
+                }
+            }
+        }
+
+        return Optional.of(detail);
     }
 
     public StatusResponseDto getStatus() {
         Instant now = Instant.now();
-        Instant lastFetch = statusTracker.getLastSuccessfulFetchAt();
-        Instant lastAttempt = statusTracker.getLastAttemptAt();
-        String freshness = statusTracker.getFreshnessStatus(now);
+        Instant afadFetch = statusTracker.getSourceState("AFAD").getLastSuccessfulFetchAt();
+        Instant afadAttempt = statusTracker.getSourceState("AFAD").getLastAttemptAt();
+        String afadFreshness = statusTracker.getFreshnessStatus("AFAD", now);
+
+        Instant koeriFetch = statusTracker.getSourceState("KOERI").getLastSuccessfulFetchAt();
+        Instant koeriAttempt = statusTracker.getSourceState("KOERI").getLastAttemptAt();
+        String koeriFreshness = statusTracker.getFreshnessStatus("KOERI", now);
 
         Instant coverageFrom = revisionRepository.findEarliestOccurredAt().orElse(null);
 
-        StatusResponseDto.CoverageDto coverage = new StatusResponseDto.CoverageDto(
+        StatusResponseDto.CoverageDto afadCoverage = new StatusResponseDto.CoverageDto(
                 coverageFrom,
-                lastFetch != null ? lastFetch : now,
-                statusTracker.isCoverageComplete()
+                afadFetch != null ? afadFetch : now,
+                statusTracker.getSourceState("AFAD").isCoverageComplete()
         );
 
-        StatusResponseDto.SourceStatusDto sourceStatus = new StatusResponseDto.SourceStatusDto(
+        StatusResponseDto.SourceStatusDto afadStatus = new StatusResponseDto.SourceStatusDto(
                 "AFAD",
-                freshness,
-                lastFetch,
-                lastAttempt,
-                coverage
+                afadFreshness,
+                afadFetch,
+                afadAttempt,
+                afadCoverage
         );
 
-        return new StatusResponseDto("available", "live", List.of(sourceStatus));
+        StatusResponseDto.CoverageDto koeriCoverage = new StatusResponseDto.CoverageDto(
+                coverageFrom,
+                koeriFetch != null ? koeriFetch : now,
+                statusTracker.getSourceState("KOERI").isCoverageComplete()
+        );
+
+        StatusResponseDto.SourceStatusDto koeriStatus = new StatusResponseDto.SourceStatusDto(
+                "KOERI",
+                koeriFreshness,
+                koeriFetch,
+                koeriAttempt,
+                koeriCoverage
+        );
+
+        return new StatusResponseDto("available", "live", List.of(afadStatus, koeriStatus));
     }
 
     private Optional<SourceReport> findReportByIdString(String idStr) {
         if (idStr == null || idStr.isBlank()) {
             return Optional.empty();
         }
-        if (idStr.toLowerCase().startsWith("afad:")) {
+        String lower = idStr.toLowerCase();
+        if (lower.startsWith("afad:")) {
             String eventId = idStr.substring(5);
             return reportRepository.findBySourceAndSourceEventId("AFAD", eventId);
+        } else if (lower.startsWith("koeri:")) {
+            String eventId = idStr.substring(6);
+            return reportRepository.findBySourceAndSourceEventId("KOERI", eventId);
         }
+
         try {
             UUID uuid = UUID.fromString(idStr);
             return reportRepository.findById(uuid);
         } catch (IllegalArgumentException e) {
-            return reportRepository.findBySourceAndSourceEventId("AFAD", idStr);
+            Optional<SourceReport> afadOpt = reportRepository.findBySourceAndSourceEventId("AFAD", idStr);
+            if (afadOpt.isPresent()) {
+                return afadOpt;
+            }
+            return reportRepository.findBySourceAndSourceEventId("KOERI", idStr);
         }
     }
 
@@ -256,6 +332,11 @@ public class EarthquakeQueryService {
         dto.setSource(report.getSource());
         dto.setRevisionNumber(rev.getRevisionNumber());
         dto.setRevisionStatus(rev.getId().equals(report.getCurrentRevisionId()) ? "current" : "superseded");
+
+        dto.setSolutionQuality(rev.getSolutionQuality());
+        dto.setMagMd(rev.getMagMd());
+        dto.setMagMl(rev.getMagMl());
+        dto.setMagMw(rev.getMagMw());
 
         if (rev.getMagnitudeValue() == null) {
             dto.getDataQuality().add("Büyüklük raporlanmadı");

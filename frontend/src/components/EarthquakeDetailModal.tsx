@@ -209,7 +209,10 @@ export const EarthquakeDetailModal: React.FC<EarthquakeDetailModalProps> = ({ it
                   {detail.current.magnitude?.value !== null ? detail.current.magnitude?.value : 'Yok'}
                   <small>{detail.current.magnitude?.type ?? ''}</small>
                 </span>
-                <span className="metric-hint">Kaynak: {detail.current.source}</span>
+                <span className="metric-hint">
+                  Kaynak: <strong>{detail.current.source === 'KOERI' ? 'Kandilli' : 'AFAD'}</strong>
+                  {detail.current.solutionQuality ? ` (${detail.current.solutionQuality})` : ''}
+                </span>
               </div>
 
               <div className="modal-metric-card">
@@ -390,6 +393,70 @@ export const EarthquakeDetailModal: React.FC<EarthquakeDetailModalProps> = ({ it
                       ))}
                     </tbody>
                   </table>
+                </div>
+              )}
+
+              {detail.matchedPartner && (
+                <div className="modal-info-section full-width matched-partner-box">
+                  <h3 className="section-title">✓ Doğrulanmış Kaynak Eşleşmesi (AFAD & Kandilli)</h3>
+                  <p className="revision-hint">
+                    Bu fiziksel sarsıntı hem AFAD hem Kandilli Rasathanesi tarafından bağımsız olarak kaydedilmiş ve sistem tarafından eşleştirilmiştir:
+                  </p>
+                  <table className="revision-table">
+                    <thead>
+                      <tr>
+                        <th>Parametre</th>
+                        <th>{detail.current.source === 'KOERI' ? 'Kandilli Raporu' : 'AFAD Raporu'}</th>
+                        <th>{detail.matchedPartner.source === 'KOERI' ? 'Kandilli Raporu' : 'AFAD Raporu'}</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr>
+                        <td><strong>Büyüklük</strong></td>
+                        <td>{detail.current.magnitude?.value ?? '-'} {detail.current.magnitude?.type ?? ''}</td>
+                        <td>{detail.matchedPartner.magnitude?.value ?? '-'} {detail.matchedPartner.magnitude?.type ?? ''}</td>
+                      </tr>
+                      <tr>
+                        <td><strong>Derinlik</strong></td>
+                        <td>{detail.current.depthKm !== null ? `${detail.current.depthKm} km` : '-'}</td>
+                        <td>{detail.matchedPartner.depthKm !== null ? `${detail.matchedPartner.depthKm} km` : '-'}</td>
+                      </tr>
+                      <tr>
+                        <td><strong>Konum</strong></td>
+                        <td>{detail.current.place || '-'}</td>
+                        <td>{detail.matchedPartner.place || '-'}</td>
+                      </tr>
+                      <tr>
+                        <td><strong>Koordinatlar</strong></td>
+                        <td>{detail.current.latitude.toFixed(4)}°N, {detail.current.longitude.toFixed(4)}°E</td>
+                        <td>{detail.matchedPartner.latitude.toFixed(4)}°N, {detail.matchedPartner.longitude.toFixed(4)}°E</td>
+                      </tr>
+                      <tr>
+                        <td><strong>Oluş Zamanı</strong></td>
+                        <td>{formatDate(detail.current.occurredAt)}</td>
+                        <td>{formatDate(detail.matchedPartner.occurredAt)}</td>
+                      </tr>
+                      {detail.matchReason && (
+                        <tr>
+                          <td><strong>Eşleşme Gerekçesi</strong></td>
+                          <td colSpan={2}><em>{detail.matchReason}</em></td>
+                        </tr>
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+
+              {(detail.current.source === 'KOERI' || detail.matchedPartner?.source === 'KOERI') && (
+                <div className="modal-info-section full-width koeri-attribution-box">
+                  <h4 className="section-title" style={{ fontSize: '0.875rem', marginBottom: '6px' }}>Resmi Kaynak Atfı (KOERI)</h4>
+                  <p className="info-text-sm" style={{ margin: 0, color: 'var(--text-secondary, #94a3b8)', fontSize: '0.8125rem' }}>
+                    Kaynak: Boğaziçi Üniversitesi Kandilli Rasathanesi ve Deprem Araştırma Enstitüsü, Bölgesel Deprem-Tsunami İzleme ve Değerlendirme Merkezi (KOERI-BDTİM).
+                    Veriler kamuya açık bültenlerden derlenmiştir.{' '}
+                    <a href="http://www.koeri.boun.edu.tr/scripts/lst0.asp" target="_blank" rel="noopener noreferrer" className="external-link" style={{ display: 'inline-block', marginTop: '4px' }}>
+                      Kandilli Orijinal Son Depremler Listesi ↗
+                    </a>
+                  </p>
                 </div>
               )}
             </div>

@@ -66,6 +66,18 @@ public class SourceReportRevision {
     @Column(name = "raw_payload_ref", length = 512)
     private String rawPayloadRef;
 
+    @Column(name = "solution_quality", length = 64)
+    private String solutionQuality;
+
+    @Column(name = "mag_md")
+    private Double magMd;
+
+    @Column(name = "mag_ml")
+    private Double magMl;
+
+    @Column(name = "mag_mw")
+    private Double magMw;
+
     public SourceReportRevision() {
     }
 
@@ -211,5 +223,37 @@ public class SourceReportRevision {
 
     public void setRawPayloadRef(String rawPayloadRef) {
         this.rawPayloadRef = rawPayloadRef;
+    }
+
+    public String getSolutionQuality() {
+        return solutionQuality;
+    }
+
+    public void setSolutionQuality(String solutionQuality) {
+        this.solutionQuality = solutionQuality;
+    }
+
+    public Double getMagMd() {
+        return magMd;
+    }
+
+    public void setMagMd(Double magMd) {
+        this.magMd = magMd;
+    }
+
+    public Double getMagMl() {
+        return magMl;
+    }
+
+    public void setMagMl(Double magMl) {
+        this.magMl = magMl;
+    }
+
+    public Double getMagMw() {
+        return magMw;
+    }
+
+    public void setMagMw(Double magMw) {
+        this.magMw = magMw;
     }
 }
