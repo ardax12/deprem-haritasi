@@ -63,7 +63,7 @@ public class LocationParser {
                 String distText = (distanceKm != null) ? (distanceKm + " km") : "";
                 info.setDisplayLocation(region + " (Türkiye kıyısına • " + nearDist + " açıklarında • " + distText + ")");
             } else if (isLake) {
-                info.setIsOffshore(true);
+                info.setIsOffshore(false);
                 info.setEnvironment("lake");
                 String distText = (distanceKm != null) ? (distanceKm + " km") : "";
                 info.setDisplayLocation(region + " (" + nearDist + " kıyısına • " + distText + ")");
@@ -89,7 +89,7 @@ public class LocationParser {
 
         // Check if pure lake without bracketed distance (e.g. "Van Gölü", "Hazar Gölü")
         if (LAKE_KEYWORDS.matcher(trimmed).matches()) {
-            info.setIsOffshore(true);
+            info.setIsOffshore(false);
             info.setEnvironment("lake");
             info.setDisplayLocation(trimmed + " (Göl İçi)");
             if (district != null && !district.isBlank()) {

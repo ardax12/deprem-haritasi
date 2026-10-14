@@ -164,9 +164,13 @@ export const EarthquakeList: React.FC<EarthquakeListProps> = ({
                   </div>
                   <div className="card-time">
                     <span className="time-with-icon"><IconClock size={12} /> {formatDate(item.occurredAt)}</span>
-                    {loc.isOffshore && <span className="card-env-tag sea"><IconSea size={12} /> Açık Deniz</span>}
-                    {loc.isLake && <span className="card-env-tag lake"><IconLake size={12} /> Göl İçi</span>}
-                    {loc.isCrossBorder && <span className="card-env-tag border"><IconGlobe size={12} /> Sınır Ötesi</span>}
+                    {loc.isLake ? (
+                      <span className="card-env-tag lake"><IconLake size={12} /> Göl İçi</span>
+                    ) : loc.isOffshore ? (
+                      <span className="card-env-tag sea"><IconSea size={12} /> Açık Deniz</span>
+                    ) : loc.isCrossBorder ? (
+                      <span className="card-env-tag border"><IconGlobe size={12} /> Sınır Ötesi</span>
+                    ) : null}
                   </div>
                 </div>
               </div>

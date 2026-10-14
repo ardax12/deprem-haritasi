@@ -145,10 +145,10 @@ export const EarthquakeDetailModal: React.FC<EarthquakeDetailModalProps> = ({ it
         <div className="modal-header">
           <div>
             <div className="modal-header-top">
-              {parsedLoc.isOffshore ? (
-                <span className="environment-badge offshore"><IconSea size={14} /> Açık Deniz Depremi</span>
-              ) : parsedLoc.isLake ? (
+              {parsedLoc.isLake ? (
                 <span className="environment-badge lake"><IconLake size={14} /> Göl İçi Deprem</span>
+              ) : parsedLoc.isOffshore ? (
+                <span className="environment-badge offshore"><IconSea size={14} /> Açık Deniz Depremi</span>
               ) : parsedLoc.isCrossBorder ? (
                 <span className="environment-badge cross-border"><IconGlobe size={14} /> Sınır Ötesi</span>
               ) : (
@@ -223,36 +223,7 @@ export const EarthquakeDetailModal: React.FC<EarthquakeDetailModalProps> = ({ it
 
               <div className="modal-info-section full-width">
                 <h3 className="section-title">Konum ve Koordinat Bilgileri</h3>
-                {parsedLoc.isOffshore ? (
-                  <div className="info-grid">
-                    <div className="info-item">
-                      <span className="info-label">Deprem Ortamı:</span>
-                      <span className="info-val highlight-sea"><IconSea size={14} /> Açık Deniz</span>
-                    </div>
-                    <div className="info-item">
-                      <span className="info-label">Deniz / Havza:</span>
-                      <span className="info-val">{parsedLoc.region}</span>
-                    </div>
-                    <div className="info-item">
-                      <span className="info-label">En Yakın Türkiye Kıyısı / Şehri:</span>
-                      <span className="info-val">{parsedLoc.nearestSettlement || detail.current.district || '-'}</span>
-                    </div>
-                    <div className="info-item">
-                      <span className="info-label">Türkiye Kıyısına Mesafe (AFAD):</span>
-                      <span className="info-val">
-                        {parsedLoc.distanceKm !== null ? `${parsedLoc.distanceKm} km açıkta` : 'Açık Deniz'}
-                      </span>
-                    </div>
-                    <div className="info-item">
-                      <span className="info-label">Enlem (Latitude):</span>
-                      <span className="info-val">{detail.current.latitude.toFixed(5)}° N</span>
-                    </div>
-                    <div className="info-item">
-                      <span className="info-label">Boylam (Longitude):</span>
-                      <span className="info-val">{detail.current.longitude.toFixed(5)}° E</span>
-                    </div>
-                  </div>
-                ) : parsedLoc.isLake ? (
+                {parsedLoc.isLake ? (
                   <div className="info-grid">
                     <div className="info-item">
                       <span className="info-label">Deprem Ortamı:</span>
@@ -270,6 +241,35 @@ export const EarthquakeDetailModal: React.FC<EarthquakeDetailModalProps> = ({ it
                       <span className="info-label">Kıyıya Mesafe (AFAD):</span>
                       <span className="info-val">
                         {parsedLoc.distanceKm !== null ? `${parsedLoc.distanceKm} km açıkta` : 'Göl İçi'}
+                      </span>
+                    </div>
+                    <div className="info-item">
+                      <span className="info-label">Enlem (Latitude):</span>
+                      <span className="info-val">{detail.current.latitude.toFixed(5)}° N</span>
+                    </div>
+                    <div className="info-item">
+                      <span className="info-label">Boylam (Longitude):</span>
+                      <span className="info-val">{detail.current.longitude.toFixed(5)}° E</span>
+                    </div>
+                  </div>
+                ) : parsedLoc.isOffshore ? (
+                  <div className="info-grid">
+                    <div className="info-item">
+                      <span className="info-label">Deprem Ortamı:</span>
+                      <span className="info-val highlight-sea"><IconSea size={14} /> Açık Deniz</span>
+                    </div>
+                    <div className="info-item">
+                      <span className="info-label">Deniz / Havza:</span>
+                      <span className="info-val">{parsedLoc.region}</span>
+                    </div>
+                    <div className="info-item">
+                      <span className="info-label">En Yakın Türkiye Kıyısı / Şehri:</span>
+                      <span className="info-val">{parsedLoc.nearestSettlement || detail.current.district || '-'}</span>
+                    </div>
+                    <div className="info-item">
+                      <span className="info-label">Türkiye Kıyısına Mesafe (AFAD):</span>
+                      <span className="info-val">
+                        {parsedLoc.distanceKm !== null ? `${parsedLoc.distanceKm} km açıkta` : 'Açık Deniz'}
                       </span>
                     </div>
                     <div className="info-item">

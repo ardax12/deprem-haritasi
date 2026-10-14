@@ -56,7 +56,7 @@ class LocationParserTest {
                 "Türkiye"
         );
 
-        assertTrue(info.getIsOffshore());
+        assertFalse(info.getIsOffshore());
         assertEquals("lake", info.getEnvironment());
         assertEquals(5.12, info.getDistanceToCoastKm());
         assertEquals("Tusba (Van)", info.getNearestSettlement());
@@ -72,7 +72,7 @@ class LocationParserTest {
                 "Türkiye"
         );
 
-        assertTrue(info.getIsOffshore());
+        assertFalse(info.getIsOffshore());
         assertEquals("lake", info.getEnvironment());
         assertEquals(3.40, info.getDistanceToCoastKm());
         assertEquals("Sivrice (Elazığ)", info.getNearestSettlement());
