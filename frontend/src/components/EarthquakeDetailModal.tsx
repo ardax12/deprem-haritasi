@@ -3,7 +3,7 @@ import type { EarthquakeItem, EarthquakeDetail } from '../types/earthquake';
 import { fetchEarthquakeDetail } from '../services/api';
 import { parseItemLocation } from '../utils/locationHelper';
 import { formatRelativeTime } from '../utils/timeHelper';
-import { IconSea, IconGlobe, IconLand, IconShare, IconCheck, IconAlertTriangle } from './Icons';
+import { IconSea, IconLake, IconGlobe, IconLand, IconShare, IconCheck, IconAlertTriangle } from './Icons';
 
 interface EarthquakeDetailModalProps {
   item: EarthquakeItem | null;
@@ -147,6 +147,8 @@ export const EarthquakeDetailModal: React.FC<EarthquakeDetailModalProps> = ({ it
             <div className="modal-header-top">
               {parsedLoc.isOffshore ? (
                 <span className="environment-badge offshore"><IconSea size={14} /> Açık Deniz Depremi</span>
+              ) : parsedLoc.isLake ? (
+                <span className="environment-badge lake"><IconLake size={14} /> Göl İçi Deprem</span>
               ) : parsedLoc.isCrossBorder ? (
                 <span className="environment-badge cross-border"><IconGlobe size={14} /> Sınır Ötesi</span>
               ) : (
@@ -239,6 +241,35 @@ export const EarthquakeDetailModal: React.FC<EarthquakeDetailModalProps> = ({ it
                       <span className="info-label">Türkiye Kıyısına Mesafe (AFAD):</span>
                       <span className="info-val">
                         {parsedLoc.distanceKm !== null ? `${parsedLoc.distanceKm} km açıkta` : 'Açık Deniz'}
+                      </span>
+                    </div>
+                    <div className="info-item">
+                      <span className="info-label">Enlem (Latitude):</span>
+                      <span className="info-val">{detail.current.latitude.toFixed(5)}° N</span>
+                    </div>
+                    <div className="info-item">
+                      <span className="info-label">Boylam (Longitude):</span>
+                      <span className="info-val">{detail.current.longitude.toFixed(5)}° E</span>
+                    </div>
+                  </div>
+                ) : parsedLoc.isLake ? (
+                  <div className="info-grid">
+                    <div className="info-item">
+                      <span className="info-label">Deprem Ortamı:</span>
+                      <span className="info-val highlight-lake"><IconLake size={14} /> Göl İçi Deprem</span>
+                    </div>
+                    <div className="info-item">
+                      <span className="info-label">Göl / Havza:</span>
+                      <span className="info-val">{parsedLoc.region}</span>
+                    </div>
+                    <div className="info-item">
+                      <span className="info-label">En Yakın Kıyı / Şehir:</span>
+                      <span className="info-val">{parsedLoc.nearestSettlement || detail.current.district || '-'}</span>
+                    </div>
+                    <div className="info-item">
+                      <span className="info-label">Kıyıya Mesafe (AFAD):</span>
+                      <span className="info-val">
+                        {parsedLoc.distanceKm !== null ? `${parsedLoc.distanceKm} km açıkta` : 'Göl İçi'}
                       </span>
                     </div>
                     <div className="info-item">

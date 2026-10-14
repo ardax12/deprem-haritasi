@@ -28,7 +28,7 @@ class LocationParserTest {
         assertEquals("offshore", info.getEnvironment());
         assertEquals(54.20, info.getDistanceToCoastKm());
         assertEquals("Silifke (Mersin)", info.getNearestSettlement());
-        assertEquals("Akdeniz (Türkiye kıyısına • Silifke açıkları • 54.2 km)", info.getDisplayLocation());
+        assertEquals("Akdeniz (Türkiye kıyısına • Silifke açıklarında • 54.2 km)", info.getDisplayLocation());
     }
 
     @Test
@@ -44,7 +44,67 @@ class LocationParserTest {
         assertEquals("offshore", info.getEnvironment());
         assertEquals(18.87, info.getDistanceToCoastKm());
         assertEquals("Ayvacık (Çanakkale)", info.getNearestSettlement());
-        assertEquals("Ege Denizi (Türkiye kıyısına • Ayvacık açıkları • 18.87 km)", info.getDisplayLocation());
+        assertEquals("Ege Denizi (Türkiye kıyısına • Ayvacık açıklarında • 18.87 km)", info.getDisplayLocation());
+    }
+
+    @Test
+    void parse_vanGolu_correctlyIdentifiedAsLake() {
+        LocationInfoDto info = parser.parse(
+                "Van Golu - [05.12 km] Tusba (Van)",
+                "Van",
+                "Tusba",
+                "Türkiye"
+        );
+
+        assertTrue(info.getIsOffshore());
+        assertEquals("lake", info.getEnvironment());
+        assertEquals(5.12, info.getDistanceToCoastKm());
+        assertEquals("Tusba (Van)", info.getNearestSettlement());
+        assertEquals("Van Golu (Tusba kıyısına • 5.12 km)", info.getDisplayLocation());
+    }
+
+    @Test
+    void parse_hazarGolu_correctlyIdentifiedAsLake() {
+        LocationInfoDto info = parser.parse(
+                "Hazar Gölü - [03.40 km] Sivrice (Elazığ)",
+                "Elazığ",
+                "Sivrice",
+                "Türkiye"
+        );
+
+        assertTrue(info.getIsOffshore());
+        assertEquals("lake", info.getEnvironment());
+        assertEquals(3.40, info.getDistanceToCoastKm());
+        assertEquals("Sivrice (Elazığ)", info.getNearestSettlement());
+        assertEquals("Hazar Gölü (Sivrice kıyısına • 3.4 km)", info.getDisplayLocation());
+    }
+
+    @Test
+    void parse_golbasiLandNotTreatedAsLake() {
+        LocationInfoDto info = parser.parse(
+                "Gölbaşı (Adıyaman)",
+                "Adıyaman",
+                "Gölbaşı",
+                "Türkiye"
+        );
+
+        assertFalse(info.getIsOffshore());
+        assertEquals("land", info.getEnvironment());
+        assertEquals("Gölbaşı (Adıyaman)", info.getDisplayLocation());
+    }
+
+    @Test
+    void parse_golcukLandNotTreatedAsLake() {
+        LocationInfoDto info = parser.parse(
+                "Gölcük (Kocaeli)",
+                "Kocaeli",
+                "Gölcük",
+                "Türkiye"
+        );
+
+        assertFalse(info.getIsOffshore());
+        assertEquals("land", info.getEnvironment());
+        assertEquals("Gölcük (Kocaeli)", info.getDisplayLocation());
     }
 
     @Test

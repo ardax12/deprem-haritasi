@@ -18,6 +18,10 @@ public class LocationParser {
             "(?i).*(deniz|k[oö]rfez|akdeniz|karadeniz|ege|marmara).*"
     );
 
+    private static final Pattern LAKE_KEYWORDS = Pattern.compile(
+            "(?iU).*(^|\\s)(van g[oö]l[uü]|hazar g[oö]l[uü]|iznik g[oö]l[uü]|beyşehir g[oö]l[uü]|eğridir g[oö]l[uü]|sapanca g[oö]l[uü]|burdur g[oö]l[uü]|tuz g[oö]l[uü]|g[oö]l[uü]?|baraj[iı]?)(\\s|$|\\(|-).*"
+    );
+
     public LocationInfoDto parse(String place, String province, String district, String country) {
         LocationInfoDto info = new LocationInfoDto();
 
@@ -51,11 +55,18 @@ public class LocationParser {
             info.setNearestSettlement(nearest.toString());
 
             boolean isSea = SEA_KEYWORDS.matcher(region).matches();
+            boolean isLake = LAKE_KEYWORDS.matcher(region).matches();
+
             if (isSea) {
                 info.setIsOffshore(true);
                 info.setEnvironment("offshore");
                 String distText = (distanceKm != null) ? (distanceKm + " km") : "";
-                info.setDisplayLocation(region + " (Türkiye kıyısına • " + nearDist + " açıkları • " + distText + ")");
+                info.setDisplayLocation(region + " (Türkiye kıyısına • " + nearDist + " açıklarında • " + distText + ")");
+            } else if (isLake) {
+                info.setIsOffshore(true);
+                info.setEnvironment("lake");
+                String distText = (distanceKm != null) ? (distanceKm + " km") : "";
+                info.setDisplayLocation(region + " (" + nearDist + " kıyısına • " + distText + ")");
             } else {
                 info.setIsOffshore(false);
                 info.setEnvironment("cross_border");
@@ -70,6 +81,17 @@ public class LocationParser {
             info.setIsOffshore(true);
             info.setEnvironment("offshore");
             info.setDisplayLocation(trimmed + " (Açık Deniz)");
+            if (district != null && !district.isBlank()) {
+                info.setNearestSettlement(district + (province != null ? " (" + province + ")" : ""));
+            }
+            return info;
+        }
+
+        // Check if pure lake without bracketed distance (e.g. "Van Gölü", "Hazar Gölü")
+        if (LAKE_KEYWORDS.matcher(trimmed).matches()) {
+            info.setIsOffshore(true);
+            info.setEnvironment("lake");
+            info.setDisplayLocation(trimmed + " (Göl İçi)");
             if (district != null && !district.isBlank()) {
                 info.setNearestSettlement(district + (province != null ? " (" + province + ")" : ""));
             }

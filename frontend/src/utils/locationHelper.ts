@@ -2,8 +2,9 @@ import type { EarthquakeItem } from '../types/earthquake';
 
 export interface ParsedLocation {
   isOffshore: boolean;
+  isLake: boolean;
   isCrossBorder: boolean;
-  environment: 'offshore' | 'cross_border' | 'land';
+  environment: 'offshore' | 'lake' | 'cross_border' | 'land';
   displayTitle: string;
   region: string;
   nearestSettlement: string | null;
@@ -12,12 +13,14 @@ export interface ParsedLocation {
 
 export function parseItemLocation(item: EarthquakeItem): ParsedLocation {
   if (item.displayLocation && item.environment) {
-    const isOffshore = item.isOffshore ?? item.environment === 'offshore';
+    const isLake = item.environment === 'lake';
+    const isOffshore = item.environment === 'offshore';
     const isCrossBorder = item.environment === 'cross_border';
     return {
       isOffshore,
+      isLake,
       isCrossBorder,
-      environment: isOffshore ? 'offshore' : (isCrossBorder ? 'cross_border' : 'land'),
+      environment: (item.environment as any) || 'land',
       displayTitle: item.displayLocation,
       region: item.place?.split('-')[0]?.trim() || item.province || 'Bölge',
       nearestSettlement: item.nearestSettlement ?? null,
@@ -36,12 +39,26 @@ export function parseItemLocation(item: EarthquakeItem): ParsedLocation {
     const nearestSettlement = district + (province ? ` (${province})` : '');
 
     const isSea = /(deniz|k[oö]rfez|akdeniz|karadeniz|ege|marmara)/i.test(region);
+    const isLake = /(^|\s)(van g[oö]l[uü]|hazar g[oö]l[uü]|iznik g[oö]l[uü]|beyşehir g[oö]l[uü]|eğridir g[oö]l[uü]|sapanca g[oö]l[uü]|burdur g[oö]l[uü]|tuz g[oö]l[uü]|g[oö]l[uü]?|baraj[iı]?)(\s|$|\(|-)/i.test(region);
+
     if (isSea) {
       return {
         isOffshore: true,
+        isLake: false,
         isCrossBorder: false,
         environment: 'offshore',
-        displayTitle: `${region} (Türkiye kıyısına • ${district} açıkları • ${distanceKm} km)`,
+        displayTitle: `${region} (Türkiye kıyısına • ${district} açıklarında • ${distanceKm} km)`,
+        region,
+        nearestSettlement,
+        distanceKm
+      };
+    } else if (isLake) {
+      return {
+        isOffshore: false,
+        isLake: true,
+        isCrossBorder: false,
+        environment: 'lake',
+        displayTitle: `${region} (${district} kıyısına • ${distanceKm} km)`,
         region,
         nearestSettlement,
         distanceKm
@@ -49,6 +66,7 @@ export function parseItemLocation(item: EarthquakeItem): ParsedLocation {
     } else {
       return {
         isOffshore: false,
+        isLake: false,
         isCrossBorder: true,
         environment: 'cross_border',
         displayTitle: `${region} (${district} sınırında • ${distanceKm} km)`,
@@ -59,11 +77,26 @@ export function parseItemLocation(item: EarthquakeItem): ParsedLocation {
     }
   }
 
+  const isPureLake = /(^|\s)(van g[oö]l[uü]|hazar g[oö]l[uü]|iznik g[oö]l[uü]|beyşehir g[oö]l[uü]|eğridir g[oö]l[uü]|sapanca g[oö]l[uü]|burdur g[oö]l[uü]|tuz g[oö]l[uü])(\s|$|\()/i.test(rawPlace);
+  if (isPureLake) {
+    return {
+      isOffshore: false,
+      isLake: true,
+      isCrossBorder: false,
+      environment: 'lake',
+      displayTitle: `${rawPlace} (Göl İçi)`,
+      region: rawPlace,
+      nearestSettlement: item.district ? `${item.district}${item.province ? ` (${item.province})` : ''}` : null,
+      distanceKm: null
+    };
+  }
+
   const isPureSea = /(deniz|k[oö]rfez|akdeniz|karadeniz|ege|marmara)/i.test(rawPlace) &&
     !rawPlace.toLowerCase().includes('denizli');
   if (isPureSea) {
     return {
       isOffshore: true,
+      isLake: false,
       isCrossBorder: false,
       environment: 'offshore',
       displayTitle: `${rawPlace} (Açık Deniz)`,
@@ -75,6 +108,7 @@ export function parseItemLocation(item: EarthquakeItem): ParsedLocation {
 
   return {
     isOffshore: false,
+    isLake: false,
     isCrossBorder: false,
     environment: 'land',
     displayTitle: rawPlace || (item.district ? `${item.district} (${item.province ?? ''})` : item.province ?? 'Bilinmeyen Konum'),

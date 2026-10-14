@@ -1,0 +1,82 @@
+services:
+  # ----------------------------------------------------
+  # PostgreSQL Database Container
+  # ----------------------------------------------------
+  postgres:
+    image: postgres:16-alpine
+    container_name: deprem_postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-depremdb}
+      POSTGRES_USER: ${POSTGRES_USER:-deprem_app}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Database password must be set in .env}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-deprem_app} -d ${POSTGRES_DB:-depremdb}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 15s
+    networks:
+      - deprem_net
+
+  # ----------------------------------------------------
+  # Spring Boot & React Application (Multi-stage build)
+  # ----------------------------------------------------
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: deprem_app
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      PORT: 8080
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB:-depremdb}
+      SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER:-deprem_app}
+      SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD:?Database password must be set in .env}
+      AFAD_SYNC_ENABLED: ${AFAD_SYNC_ENABLED:-true}
+      AFAD_SYNC_INTERVAL_MS: ${AFAD_SYNC_INTERVAL_MS:-300000}
+      AFAD_SYNC_WINDOW_HOURS: ${AFAD_SYNC_WINDOW_HOURS:-24}
+      APP_RETENTION_ENABLED: ${APP_RETENTION_ENABLED:-true}
+      APP_RETENTION_DAYS: ${APP_RETENTION_DAYS:-30}
+      APP_ADMIN_API_KEY: ${APP_ADMIN_API_KEY:-}
+      CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS:-https://localhost}
+      JAVA_OPTS: "-XX:+UseContainerSupport -XX:MaxRAMPercentage=75.0"
+    expose:
+      - "8080"
+    networks:
+      - deprem_net
+
+  # ----------------------------------------------------
+  # Nginx Reverse Proxy with Rate Limiting & SSL
+  # ----------------------------------------------------
+  nginx:
+    image: nginx:alpine
+    container_name: deprem_nginx
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./nginx/conf.d:/etc/nginx/conf.d:ro
+      - ./nginx/ssl:/etc/nginx/ssl:ro
+      - certbot_challenge:/var/www/certbot:ro
+    depends_on:
+      - app
+    networks:
+      - deprem_net
+
+volumes:
+  pgdata:
+    driver: local
+  certbot_challenge:
+    driver: local
+
+networks:
+  deprem_net:
+    driver: bridge
