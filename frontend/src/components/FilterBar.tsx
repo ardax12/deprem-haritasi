@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import type { FilterParams } from '../types/earthquake';
+import { TURKISH_PROVINCES, findProvinceByName } from '../data/provinces';
 
 interface FilterBarProps {
   filters: FilterParams;
@@ -36,8 +37,13 @@ export const FilterBar: React.FC<FilterBarProps> = ({
   const handlePlaceKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter') {
       e.preventDefault();
-      if (localPlace !== filters.place) {
-        onChange({ place: localPlace });
+      const matched = findProvinceByName(localPlace);
+      const targetPlace = matched ? matched.name : localPlace;
+      if (matched && matched.name !== localPlace) {
+        setLocalPlace(matched.name);
+      }
+      if (targetPlace !== filters.place) {
+        onChange({ place: targetPlace });
       }
     }
   };
@@ -153,10 +159,17 @@ export const FilterBar: React.FC<FilterBarProps> = ({
               type="text"
               className="filter-input"
               placeholder="İl, ilçe veya bölge (örn: Malatya, Ege)..."
+              list="provinces-datalist"
+              autoComplete="off"
               value={localPlace}
               onChange={(e) => setLocalPlace(e.target.value)}
               onKeyDown={handlePlaceKeyDown}
             />
+            <datalist id="provinces-datalist">
+              {TURKISH_PROVINCES.map((prov) => (
+                <option key={prov.plate} value={prov.name} label={`${prov.name} (${prov.region})`} />
+              ))}
+            </datalist>
             {localPlace && (
               <button
                 type="button"

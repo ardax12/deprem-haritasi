@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import type { Freshness } from '../types/earthquake';
 import { IconInfo, IconDownload, IconSeismicLogo } from './Icons';
 
@@ -25,6 +25,21 @@ export const Header: React.FC<HeaderProps> = ({
   onInstall,
   isOnline = true
 }) => {
+  const [disclaimerDismissed, setDisclaimerDismissed] = useState<boolean>(() => {
+    try {
+      return localStorage.getItem('deprem_disclaimer_dismissed') === 'true';
+    } catch {
+      return false;
+    }
+  });
+
+  const handleDismissDisclaimer = () => {
+    setDisclaimerDismissed(true);
+    try {
+      localStorage.setItem('deprem_disclaimer_dismissed', 'true');
+    } catch {}
+  };
+
   const getStatusBadge = () => {
     if (!isOnline) {
       return <span className="badge badge-gray" title="İnternet bağlantısı yok">○ Çevrimdışı</span>;
@@ -55,19 +70,29 @@ export const Header: React.FC<HeaderProps> = ({
 
   return (
     <header className="app-header">
-      <div className="header-disclaimer-banner" role="region" aria-label="Resmi Bilgilendirme Notu">
-        <span className="disclaimer-icon"><IconInfo size={15} /></span>
-        <span>
-          <strong>Bilgilendirme Notu:</strong> Bu uygulama bağımsız bir açık veri izleme aracıdır; resmi acil durum hizmeti değildir.
-          Veriler{' '}
-          <a href="https://deprem.afad.gov.tr" target="_blank" rel="noopener noreferrer" className="external-link">
-            AFAD
-          </a>{' '}ve{' '}
-          <a href="http://www.koeri.boun.edu.tr/scripts/lst0.asp" target="_blank" rel="noopener noreferrer" className="external-link">
-            Kandilli Rasathanesi (KOERI-BDTİM)
-          </a>{' '}kamuya açık bültenlerinden derlenmektedir.
-        </span>
-      </div>
+      {!disclaimerDismissed && (
+        <div className="header-disclaimer-banner" role="region" aria-label="Resmi Bilgilendirme Notu">
+          <span className="disclaimer-icon"><IconInfo size={14} /></span>
+          <span className="disclaimer-text">
+            <strong>Bilgilendirme Notu:</strong> Bağımsız açık veri izleme aracıdır; resmi acil durum hizmeti değildir. Veriler{' '}
+            <a href="https://deprem.afad.gov.tr" target="_blank" rel="noopener noreferrer" className="external-link">
+              AFAD
+            </a>{' '}ve{' '}
+            <a href="http://www.koeri.boun.edu.tr/scripts/lst0.asp" target="_blank" rel="noopener noreferrer" className="external-link">
+              Kandilli Rasathanesi (KOERI-BDTİM)
+            </a>{' '}kamuya açık bültenlerinden derlenmektedir.
+          </span>
+          <button
+            type="button"
+            className="btn-dismiss-banner"
+            onClick={handleDismissDisclaimer}
+            title="Uyarıyı Gizle"
+            aria-label="Bilgilendirme notunu gizle"
+          >
+            ✕
+          </button>
+        </div>
+      )}
 
       <div className="header-main">
         <div className="header-title-group">

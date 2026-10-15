@@ -7,12 +7,16 @@ interface AiSummarySnippetProps {
   items: EarthquakeItem[];
   totalCount: number;
   provinceName?: string | null;
+  timeRange?: '24h' | '3d' | '7d' | '30d';
+  minMagnitude?: number | null;
 }
 
 export const AiSummarySnippet: React.FC<AiSummarySnippetProps> = ({
   items,
   totalCount,
-  provinceName
+  provinceName,
+  timeRange = '24h',
+  minMagnitude = null
 }) => {
   if (items.length === 0) return null;
 
@@ -34,13 +38,32 @@ export const AiSummarySnippet: React.FC<AiSummarySnippetProps> = ({
 
   const relTime = formatRelativeTime(latestItem.occurredAt);
 
+  // Time range labels and copy
+  let badgeLabel = '24s Özet';
+  let timeRangePhrase = 'son 24 saatte';
+
+  if (timeRange === '3d') {
+    badgeLabel = '3 Günlük Özet';
+    timeRangePhrase = 'son 3 günde';
+  } else if (timeRange === '7d') {
+    badgeLabel = '7 Günlük Özet';
+    timeRangePhrase = 'son 7 günde';
+  } else if (timeRange === '30d') {
+    badgeLabel = '30 Günlük Özet';
+    timeRangePhrase = 'son 30 günde';
+  }
+
+  const magConstraint = minMagnitude !== null && minMagnitude > 0
+    ? ` (M ≥ ${minMagnitude.toFixed(1)})`
+    : '';
+
   return (
-    <aside className="ai-summary-snippet" aria-label="Günlük Sismik Faaliyet Özeti">
-      <div className="ai-summary-badge">24s Özet</div>
+    <aside className="ai-summary-snippet" aria-label={`${badgeLabel} Sismik Faaliyet Özeti`}>
+      <div className="ai-summary-badge">{badgeLabel}</div>
       <p className="ai-summary-text">
         {provinceName ? (
           <>
-            <strong>{provinceName}</strong> ve yakın çevresinde son 24 saatte toplam <strong>{totalCount}</strong> sarsıntı kaydedildi.
+            <strong>{provinceName}</strong> ve yakın çevresinde {timeRangePhrase} toplam <strong>{totalCount}</strong> sarsıntı{magConstraint} kaydedildi.
             {maxItem && (
               <> En belirgin hareket: <strong>{maxLoc.displayTitle}</strong> ({maxMagVal}).</>
             )}
@@ -48,7 +71,7 @@ export const AiSummarySnippet: React.FC<AiSummarySnippetProps> = ({
           </>
         ) : (
           <>
-            Türkiye ve komşu bölgelerde son 24 saatte toplam <strong>{totalCount}</strong> sarsıntı kaydedildi.
+            Türkiye ve komşu bölgelerde {timeRangePhrase} toplam <strong>{totalCount}</strong> sarsıntı{magConstraint} kaydedildi.
             {maxItem && (
               <> En büyük hareket: <strong>{maxLoc.displayTitle}</strong> ({maxMagVal}).</>
             )}

@@ -92,13 +92,29 @@ export const TURKISH_PROVINCES: ProvinceData[] = [
   { plate: 81, name: 'Düzce', slug: 'duzce', lng: 31.1625, lat: 40.8438, zoom: 9.5, region: 'Karadeniz' }
 ];
 
+export const PROVINCE_ALIASES: Record<string, string> = {
+  antep: 'Gaziantep',
+  maras: 'Kahramanmaraş',
+  maraş: 'Kahramanmaraş',
+  urfa: 'Şanlıurfa',
+  afyon: 'Afyonkarahisar',
+  icel: 'Mersin',
+  içel: 'Mersin',
+  izmit: 'Kocaeli',
+  adapazari: 'Sakarya',
+  adapazarı: 'Sakarya',
+  antakya: 'Hatay',
+  dersim: 'Tunceli'
+};
+
 export function findProvinceBySlug(slug: string): ProvinceData | undefined {
   const normalized = slug.trim().toLowerCase();
   return TURKISH_PROVINCES.find((p) => p.slug === normalized);
 }
 
 export function findProvinceByName(name: string): ProvinceData | undefined {
-  const normalized = name.trim().toLowerCase()
+  const trimmed = name.trim().toLowerCase();
+  const normalized = trimmed
     .replace(/i̇/g, 'i')
     .replace(/ı/g, 'i')
     .replace(/ş/g, 's')
@@ -106,6 +122,12 @@ export function findProvinceByName(name: string): ProvinceData | undefined {
     .replace(/ü/g, 'u')
     .replace(/ö/g, 'o')
     .replace(/ç/g, 'c');
+
+  // Check aliases first
+  const aliasTarget = PROVINCE_ALIASES[trimmed] || PROVINCE_ALIASES[normalized];
+  if (aliasTarget) {
+    return TURKISH_PROVINCES.find((p) => p.name === aliasTarget);
+  }
 
   return TURKISH_PROVINCES.find((p) => {
     const pNorm = p.name.toLowerCase()
@@ -116,6 +138,6 @@ export function findProvinceByName(name: string): ProvinceData | undefined {
       .replace(/ü/g, 'u')
       .replace(/ö/g, 'o')
       .replace(/ç/g, 'c');
-    return pNorm === normalized || p.slug === normalized;
+    return pNorm === normalized || p.slug === normalized || p.name.toLowerCase() === trimmed;
   });
 }

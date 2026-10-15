@@ -112,13 +112,23 @@ export const EarthquakeMap: React.FC<EarthquakeMapProps> = ({
     depthRow.appendChild(depthStrong);
     popupContent.appendChild(depthRow);
 
+    const formatQuality = (quality?: string | null) => {
+      if (!quality) return '';
+      const q = quality.toUpperCase();
+      if (q === 'AUTOMATIC') return 'Otomatik';
+      if (q === 'MANUAL' || q === 'MANUAL_REVIEWED') return 'Uzman İncelemesi';
+      if (q === 'PRELIMINARY') return 'Ön Çözüm';
+      return quality;
+    };
+
     const srcRow = document.createElement('div');
     srcRow.className = 'popup-row';
     const srcSpan = document.createElement('span');
     srcSpan.textContent = 'Kaynak: ';
     const srcStrong = document.createElement('strong');
     const sourceLabel = item.source === 'KOERI' ? 'Kandilli (KOERI)' : 'AFAD';
-    srcStrong.textContent = item.solutionQuality ? `${sourceLabel} (${item.solutionQuality})` : sourceLabel;
+    const qualityLabel = formatQuality(item.solutionQuality);
+    srcStrong.textContent = qualityLabel ? `${sourceLabel} (${qualityLabel})` : sourceLabel;
     srcRow.appendChild(srcSpan);
     srcRow.appendChild(srcStrong);
     popupContent.appendChild(srcRow);
@@ -180,21 +190,29 @@ export const EarthquakeMap: React.FC<EarthquakeMapProps> = ({
 
   // Build GeoJSON collection
   const getGeoJSONCollection = useCallback((): FeatureCollection<Point> => {
-    const features: Feature<Point>[] = itemsRef.current.map((item) => ({
-      type: 'Feature',
-      geometry: {
-        type: 'Point',
-        coordinates: [item.longitude, item.latitude]
-      },
-      properties: {
-        id: item.id,
-        magnitude: item.magnitude?.value ?? 0,
-        type: item.magnitude?.type ?? '',
-        place: item.place ?? 'Bilinmeyen Konum',
-        depthKm: item.depthKm,
-        occurredAt: item.occurredAt
-      }
-    }));
+    const features: Feature<Point>[] = itemsRef.current.map((item) => {
+      const magVal = item.magnitude?.value ?? 0;
+      const magFormatted = item.magnitude?.value !== null && item.magnitude?.value !== undefined
+        ? item.magnitude.value.toFixed(1)
+        : '';
+
+      return {
+        type: 'Feature',
+        geometry: {
+          type: 'Point',
+          coordinates: [item.longitude, item.latitude]
+        },
+        properties: {
+          id: item.id,
+          magnitude: magVal,
+          magFormatted,
+          type: item.magnitude?.type ?? '',
+          place: item.place ?? 'Bilinmeyen Konum',
+          depthKm: item.depthKm,
+          occurredAt: item.occurredAt
+        }
+      };
+    });
 
     return {
       type: 'FeatureCollection',
@@ -252,9 +270,9 @@ export const EarthquakeMap: React.FC<EarthquakeMapProps> = ({
           'circle-radius': [
             'interpolate', ['linear'], ['coalesce', ['get', 'magnitude'], 1],
             1, 10,
-            3, 16,
-            5, 24,
-            7, 36
+            3, 18,
+            5, 26,
+            7, 38
           ],
           'circle-color': [
             'step', ['coalesce', ['get', 'magnitude'], 1],
@@ -277,10 +295,10 @@ export const EarthquakeMap: React.FC<EarthquakeMapProps> = ({
         paint: {
           'circle-radius': [
             'interpolate', ['linear'], ['coalesce', ['get', 'magnitude'], 1],
-            1, 5,
-            3, 8,
-            5, 14,
-            7, 22
+            1, 6,
+            3, 10,
+            5, 16,
+            7, 24
           ],
           'circle-color': [
             'step', ['coalesce', ['get', 'magnitude'], 1],
@@ -291,6 +309,34 @@ export const EarthquakeMap: React.FC<EarthquakeMapProps> = ({
           ],
           'circle-stroke-width': 1.5,
           'circle-stroke-color': '#090d16'
+        }
+      });
+    }
+
+    if (!map.getLayer('earthquakes-label')) {
+      map.addLayer({
+        id: 'earthquakes-label',
+        type: 'symbol',
+        source: 'earthquakes',
+        minzoom: 5.0,
+        layout: {
+          'text-field': ['get', 'magFormatted'],
+          'text-font': ['Noto Sans Regular'],
+          'text-size': [
+            'interpolate', ['linear'], ['zoom'],
+            5.0, 9,
+            7.0, 10.5,
+            9.0, 12
+          ],
+          'text-anchor': 'center',
+          'symbol-sort-key': ['-', ['coalesce', ['get', 'magnitude'], 0]],
+          'text-allow-overlap': false,
+          'text-ignore-placement': false
+        },
+        paint: {
+          'text-color': '#ffffff',
+          'text-halo-color': '#090d16',
+          'text-halo-width': 1.5
         }
       });
     }
@@ -330,10 +376,13 @@ export const EarthquakeMap: React.FC<EarthquakeMapProps> = ({
     map.on('load', handleLoaded);
     map.on('style.load', handleLoaded);
 
-    // Dynamic click handler for earthquake circles
+    const interactiveLayers = ['earthquakes-circle', 'earthquakes-label'];
+
+    // Dynamic click handler for earthquake markers
     map.on('click', (e) => {
-      if (!map.getLayer('earthquakes-circle')) return;
-      const features = map.queryRenderedFeatures(e.point, { layers: ['earthquakes-circle'] });
+      const activeLayers = interactiveLayers.filter(l => map.getLayer(l));
+      if (activeLayers.length === 0) return;
+      const features = map.queryRenderedFeatures(e.point, { layers: activeLayers });
       if (features && features.length > 0) {
         const feature = features[0];
         const props = feature.properties as any;
@@ -346,8 +395,9 @@ export const EarthquakeMap: React.FC<EarthquakeMapProps> = ({
 
     // Dynamic pointer cursor on hover
     map.on('mousemove', (e) => {
-      if (!map.getLayer('earthquakes-circle')) return;
-      const features = map.queryRenderedFeatures(e.point, { layers: ['earthquakes-circle'] });
+      const activeLayers = interactiveLayers.filter(l => map.getLayer(l));
+      if (activeLayers.length === 0) return;
+      const features = map.queryRenderedFeatures(e.point, { layers: activeLayers });
       map.getCanvas().style.cursor = features.length > 0 ? 'pointer' : '';
     });
 

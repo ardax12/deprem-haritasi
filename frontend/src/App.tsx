@@ -337,12 +337,6 @@ export function App() {
         totalCount={totalCount}
       />
 
-      <AiSummarySnippet
-        items={items}
-        totalCount={totalCount}
-        provinceName={activeProvince?.name}
-      />
-
       {error && (
         <div className="global-error-banner" role="alert">
           <span className="error-icon"><IconAlertTriangle size={16} /></span>
@@ -382,6 +376,16 @@ export function App() {
           aria-labelledby="tab-map"
           className={`map-panel ${activeTab === 'map' ? 'active-mobile' : ''}`}
         >
+          {selectedItem && (
+            <button
+              type="button"
+              className="mobile-back-to-list-btn"
+              onClick={() => setActiveTab('list')}
+              aria-label="Olay Listesine Dön"
+            >
+              <IconList size={14} /> Listeye Dön
+            </button>
+          )}
           <EarthquakeMap
             items={items}
             selectedItem={selectedItem}
@@ -396,6 +400,13 @@ export function App() {
           aria-labelledby="tab-list"
           className={`list-panel ${activeTab === 'list' ? 'active-mobile' : ''}`}
         >
+          <AiSummarySnippet
+            items={items}
+            totalCount={totalCount}
+            provinceName={activeProvince?.name}
+            timeRange={filters.timeRange}
+            minMagnitude={filters.minMagnitude}
+          />
           <EarthquakeList
             items={items}
             selectedItem={selectedItem}

@@ -104,6 +104,15 @@ export const EarthquakeList: React.FC<EarthquakeListProps> = ({
     );
   }
 
+  const formatQuality = (quality?: string | null) => {
+    if (!quality) return '';
+    const q = quality.toUpperCase();
+    if (q === 'AUTOMATIC') return 'Otomatik';
+    if (q === 'MANUAL' || q === 'MANUAL_REVIEWED') return 'İncelendi';
+    if (q === 'PRELIMINARY') return 'Ön Çözüm';
+    return quality;
+  };
+
   const countDisplay = totalCount !== undefined && totalCount > items.length
     ? `${items.length} / ${totalCount}`
     : `${items.length}`;
@@ -186,21 +195,21 @@ export const EarthquakeList: React.FC<EarthquakeListProps> = ({
                 {item.solutionQuality && (
                   <>
                     <span className="detail-dot">•</span>
-                    <span className="detail-quality-badge">{item.solutionQuality}</span>
+                    <span className="detail-quality-badge">{formatQuality(item.solutionQuality)}</span>
                   </>
                 )}
                 {item.matchStatus === 'AUTO_MATCHED' && (
                   <>
                     <span className="detail-dot">•</span>
-                    <span className="detail-matched-badge" title="AFAD ve Kandilli bültenleriyle karşılıklı doğrulanmış olay">
-                      ✓ Doğrulanmış Eşleşme
+                    <span className="detail-matched-badge" title="AFAD ve Kandilli bültenleriyle karşılıklı doğrulanmış sismik olay">
+                      ✓ AFAD & Kandilli Doğrulandı
                     </span>
                   </>
                 )}
                 {item.revisionNumber > 1 && (
                   <>
                     <span className="detail-dot">•</span>
-                    <span className="detail-rev-badge">Revizyon #{item.revisionNumber}</span>
+                    <span className="detail-rev-badge">Güncellendi (Rev. {item.revisionNumber})</span>
                   </>
                 )}
               </div>

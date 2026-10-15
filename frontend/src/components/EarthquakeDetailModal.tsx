@@ -41,6 +41,15 @@ export const EarthquakeDetailModal: React.FC<EarthquakeDetailModalProps> = ({ it
     }
   };
 
+  const formatSolutionQuality = (quality?: string | null) => {
+    if (!quality) return '';
+    const q = quality.toUpperCase();
+    if (q === 'AUTOMATIC') return 'Otomatik Çözüm';
+    if (q === 'MANUAL' || q === 'MANUAL_REVIEWED') return 'Uzman İncelemesi';
+    if (q === 'PRELIMINARY') return 'Ön Çözüm';
+    return quality;
+  };
+
   const handleShare = async () => {
     if (!item || !activeItem || !parsedLoc) return;
     const shareUrl = `${window.location.origin}${window.location.pathname}?event=${encodeURIComponent(item.id)}`;
@@ -211,7 +220,7 @@ export const EarthquakeDetailModal: React.FC<EarthquakeDetailModalProps> = ({ it
                 </span>
                 <span className="metric-hint">
                   Kaynak: <strong>{detail.current.source === 'KOERI' ? 'Kandilli' : 'AFAD'}</strong>
-                  {detail.current.solutionQuality ? ` (${detail.current.solutionQuality})` : ''}
+                  {detail.current.solutionQuality ? ` (${formatSolutionQuality(detail.current.solutionQuality)})` : ''}
                 </span>
               </div>
 
