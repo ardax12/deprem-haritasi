@@ -28,7 +28,7 @@ RUN ./gradlew dependencies --no-daemon || true
 COPY src src
 
 # Copy compiled frontend from Stage 1 into Spring Boot static resources
-COPY --from=frontend-builder /app/frontend/dist src/main/resources/static
+COPY --from=frontend-builder /app/src/main/resources/static/ src/main/resources/static/
 
 # Build executable Spring Boot jar
 RUN ./gradlew bootJar --no-daemon -x test
