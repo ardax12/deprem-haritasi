@@ -87,7 +87,7 @@ export const InfoModal: React.FC<InfoModalProps> = ({ isOpen, onClose }) => {
           <button
             ref={closeBtnRef}
             type="button"
-            className="btn-close-modal"
+            className="btn-modal-close btn-close-modal"
             onClick={onClose}
             aria-label="Kapat"
             title="Kapat"

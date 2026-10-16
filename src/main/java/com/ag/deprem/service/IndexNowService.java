@@ -40,6 +40,17 @@ public class IndexNowService {
         return enabled;
     }
 
+    private static String escapeJson(String s) {
+        if (s == null) return "";
+        return s.replace("\\", "\\\\")
+                .replace("\"", "\\\"")
+                .replace("\b", "\\b")
+                .replace("\f", "\\f")
+                .replace("\n", "\\n")
+                .replace("\r", "\\r")
+                .replace("\t", "\\t");
+    }
+
     /**
      * Asynchronously submits updated URLs to the IndexNow network (Bing, Yandex, Seznam, etc.)
      */
@@ -56,24 +67,22 @@ public class IndexNowService {
                     host = "depremizleme.com";
                 }
 
+                List<String> fullUrls = relativeOrAbsoluteUrls.stream()
+                        .map(u -> u.startsWith("http") ? u : cleanBase + (u.startsWith("/") ? u : "/" + u))
+                        .toList();
+
                 StringBuilder urlListJson = new StringBuilder();
-                for (int i = 0; i < relativeOrAbsoluteUrls.size(); i++) {
-                    String u = relativeOrAbsoluteUrls.get(i);
-                    String fullUrl = u.startsWith("http") ? u : cleanBase + (u.startsWith("/") ? u : "/" + u);
-                    urlListJson.append("\"").append(fullUrl).append("\"");
-                    if (i < relativeOrAbsoluteUrls.size() - 1) {
+                for (int i = 0; i < fullUrls.size(); i++) {
+                    urlListJson.append("\"").append(escapeJson(fullUrls.get(i))).append("\"");
+                    if (i < fullUrls.size() - 1) {
                         urlListJson.append(",");
                     }
                 }
 
-                String payload = String.format(
-                        "{\"host\":\"%s\",\"key\":\"%s\",\"keyLocation\":\"%s/%s.txt\",\"urlList\":[%s]}",
-                        host,
-                        indexNowKey,
-                        cleanBase,
-                        indexNowKey,
-                        urlListJson
-                );
+                String payload = "{\"host\":\"" + escapeJson(host) + "\","
+                        + "\"key\":\"" + escapeJson(indexNowKey) + "\","
+                        + "\"keyLocation\":\"" + escapeJson(cleanBase + "/" + indexNowKey + ".txt") + "\","
+                        + "\"urlList\":[" + urlListJson + "]}";
 
                 HttpRequest request = HttpRequest.newBuilder()
                         .uri(URI.create(INDEXNOW_API_ENDPOINT))

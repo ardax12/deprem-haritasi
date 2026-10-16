@@ -21,8 +21,10 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -146,8 +148,36 @@ public class EarthquakeQueryService {
 
         Page<SourceReportRevision> revisionPage = revisionRepository.findAll(spec, pageable);
 
+        List<UUID> reportIds = revisionPage.getContent().stream()
+                .map(r -> r.getSourceReport().getId())
+                .toList();
+        List<EventMatch> matches = reportIds.isEmpty() ? List.of() : matchRepository.findActiveMatchesByReportIds(reportIds);
+        Map<UUID, EventMatch> matchByReportId = new HashMap<>();
+        for (EventMatch m : matches) {
+            if (m.getLeftReport() != null) {
+                matchByReportId.putIfAbsent(m.getLeftReport().getId(), m);
+            }
+            if (m.getRightReport() != null) {
+                matchByReportId.putIfAbsent(m.getRightReport().getId(), m);
+            }
+        }
+
         List<EarthquakeItemDto> items = revisionPage.getContent().stream()
-                .map(this::mapToItemDto)
+                .map(rev -> {
+                    EarthquakeItemDto dto = mapToItemDto(rev);
+                    UUID reportId = rev.getSourceReport().getId();
+                    EventMatch match = matchByReportId.get(reportId);
+                    if (match != null) {
+                        dto.setMatchStatus(match.getStatus());
+                        SourceReport partner = match.getLeftReport().getId().equals(reportId)
+                                ? match.getRightReport()
+                                : match.getLeftReport();
+                        if (partner != null) {
+                            dto.setMatchedEventId(partner.getSource().toLowerCase() + ":" + partner.getSourceEventId());
+                        }
+                    }
+                    return dto;
+                })
                 .toList();
 
         String nextCursor = revisionPage.hasNext() ? String.valueOf(effectivePage + 1) : null;
@@ -159,10 +189,11 @@ public class EarthquakeQueryService {
                 nextCursor
         );
 
+        String freshnessSource = (source != null && "KOERI".equalsIgnoreCase(source.trim())) ? "KOERI" : "AFAD";
         FreshnessDto freshness = new FreshnessDto(
-                "AFAD",
-                statusTracker.getLastSuccessfulFetchAt(),
-                statusTracker.getFreshnessStatus(now)
+                freshnessSource,
+                statusTracker.getLastSuccessfulFetchAt(freshnessSource),
+                statusTracker.getFreshnessStatus(freshnessSource, now)
         );
 
         return new EarthquakesListResponseDto(items, pageInfo, freshness);
@@ -198,7 +229,11 @@ public class EarthquakeQueryService {
             return Optional.empty();
         }
 
-        EarthquakeItemDto currentDto = mapToItemDto(revisions.get(0));
+        SourceReportRevision currentRev = revisions.stream()
+                .filter(r -> r.getId().equals(report.getCurrentRevisionId()))
+                .findFirst()
+                .orElse(revisions.get(0));
+        EarthquakeItemDto currentDto = mapToItemDto(currentRev);
         List<EarthquakeItemDto> history = revisions.stream()
                 .map(this::mapToItemDto)
                 .toList();
@@ -210,8 +245,9 @@ public class EarthquakeQueryService {
         for (EventMatch m : matches) {
             if ("AUTO_MATCHED".equals(m.getStatus()) || "MANUAL_MATCHED".equals(m.getStatus())) {
                 SourceReport partner = m.getLeftReport().getId().equals(report.getId()) ? m.getRightReport() : m.getLeftReport();
-                Optional<SourceReportRevision> partnerRevOpt = revisionRepository
-                        .findFirstBySourceReportIdOrderByRevisionNumberDesc(partner.getId());
+                Optional<SourceReportRevision> partnerRevOpt = partner.getCurrentRevisionId() != null
+                        ? revisionRepository.findById(partner.getCurrentRevisionId())
+                        : revisionRepository.findFirstBySourceReportIdOrderByRevisionNumberDesc(partner.getId());
 
                 if (partnerRevOpt.isPresent()) {
                     detail.setMatchedPartner(mapToItemDto(partnerRevOpt.get()));
@@ -238,10 +274,11 @@ public class EarthquakeQueryService {
         Instant koeriAttempt = statusTracker.getSourceState("KOERI").getLastAttemptAt();
         String koeriFreshness = statusTracker.getFreshnessStatus("KOERI", now);
 
-        Instant coverageFrom = revisionRepository.findEarliestOccurredAt().orElse(null);
+        Instant afadCoverageFrom = revisionRepository.findEarliestOccurredAtBySource("AFAD").orElse(null);
+        Instant koeriCoverageFrom = revisionRepository.findEarliestOccurredAtBySource("KOERI").orElse(null);
 
         StatusResponseDto.CoverageDto afadCoverage = new StatusResponseDto.CoverageDto(
-                coverageFrom,
+                afadCoverageFrom,
                 afadFetch != null ? afadFetch : now,
                 statusTracker.getSourceState("AFAD").isCoverageComplete()
         );
@@ -255,7 +292,7 @@ public class EarthquakeQueryService {
         );
 
         StatusResponseDto.CoverageDto koeriCoverage = new StatusResponseDto.CoverageDto(
-                coverageFrom,
+                koeriCoverageFrom,
                 koeriFetch != null ? koeriFetch : now,
                 statusTracker.getSourceState("KOERI").isCoverageComplete()
         );

@@ -6,6 +6,7 @@ import type { GeoJSONSource } from 'maplibre-gl';
 import type { Feature, Point, FeatureCollection } from 'geojson';
 import 'maplibre-gl/dist/maplibre-gl.css';
 import type { EarthquakeItem } from '../types/earthquake';
+import type { ProvinceData } from '../data/provinces';
 import turkishDarkStyleJson from '../assets/turkish-dark-style.json';
 import { parseItemLocation } from '../utils/locationHelper';
 
@@ -15,6 +16,8 @@ const turkishDarkStyle = turkishDarkStyleJson as unknown as StyleSpecification;
 interface EarthquakeMapProps {
   items: EarthquakeItem[];
   selectedItem: EarthquakeItem | null;
+  activeProvince?: ProvinceData | null;
+  isVisible?: boolean;
   onSelect: (item: EarthquakeItem) => void;
   onOpenDetail: (item: EarthquakeItem) => void;
 }
@@ -22,6 +25,8 @@ interface EarthquakeMapProps {
 export const EarthquakeMap: React.FC<EarthquakeMapProps> = ({
   items,
   selectedItem,
+  activeProvince,
+  isVisible,
   onSelect,
   onOpenDetail
 }) => {
@@ -56,13 +61,22 @@ export const EarthquakeMap: React.FC<EarthquakeMapProps> = ({
       ? `${item.magnitude.value} ${item.magnitude?.type ?? ''}`.trim()
       : 'Bilinmiyor';
 
-    const dateStr = new Date(item.occurredAt).toLocaleString('tr-TR', {
+    const dateTsi = new Date(item.occurredAt).toLocaleString('tr-TR', {
       day: 'numeric',
       month: 'short',
       year: 'numeric',
       hour: '2-digit',
       minute: '2-digit'
     }) + ' TSİ';
+
+    let dateUtc = '';
+    try {
+      dateUtc = new Date(item.occurredAt).toISOString().replace('T', ' ').substring(0, 16) + ' UTC';
+    } catch {
+      dateUtc = item.occurredAt;
+    }
+
+    const dateStr = `${dateTsi} (${dateUtc})`;
 
     const loc = parseItemLocation(item);
 
@@ -159,7 +173,8 @@ export const EarthquakeMap: React.FC<EarthquakeMapProps> = ({
       const shareUrl = `${window.location.origin}${window.location.pathname}?event=${encodeURIComponent(item.id)}`;
       const magVal = item.magnitude?.value !== null && item.magnitude?.value !== undefined ? `M${item.magnitude.value}` : 'Deprem';
       const shareTitle = `${magVal} - ${loc.displayTitle}`;
-      const shareText = `${loc.displayTitle} - ${magVal} deprem (${dateStr}). AFAD verisiyle inceleyin:`;
+      const sourceName = item.source === 'KOERI' ? 'Kandilli' : 'AFAD';
+      const shareText = `${loc.displayTitle} - ${magVal} deprem (${dateStr}). ${sourceName} verisiyle inceleyin:`;
 
       if (typeof navigator !== 'undefined' && navigator.share) {
         try {
@@ -281,7 +296,7 @@ export const EarthquakeMap: React.FC<EarthquakeMapProps> = ({
             '#f97316', 6.0,
             '#ef4444'
           ],
-          'circle-opacity': 0.35,
+          'circle-opacity': 0.25,
           'circle-blur': 0.4
         }
       });
@@ -424,9 +439,35 @@ export const EarthquakeMap: React.FC<EarthquakeMapProps> = ({
   // Center & popup on selected earthquake
   useEffect(() => {
     const map = mapRef.current;
-    if (!map || !selectedItem) return;
+    if (!map) return;
+    if (!selectedItem) {
+      popupRef.current?.remove();
+      popupRef.current = null;
+      return;
+    }
     displayPopup(selectedItem, map);
   }, [selectedItem, displayPopup]);
+
+  // Center on active province when selected
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map || !activeProvince) return;
+    if (selectedItemRef.current) return;
+
+    map.flyTo({
+      center: [activeProvince.lng, activeProvince.lat],
+      zoom: activeProvince.zoom,
+      duration: 900,
+      essential: true
+    });
+  }, [activeProvince]);
+
+  // Resize map when visibility changes
+  useEffect(() => {
+    if (isVisible) {
+      mapRef.current?.resize();
+    }
+  }, [isVisible]);
 
   return (
     <div className="map-wrapper" aria-label="Deprem Haritası">

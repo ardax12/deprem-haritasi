@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
 import type { EarthquakeItem } from '../types/earthquake';
 import { parseItemLocation } from '../utils/locationHelper';
+import { findProvinceByName } from '../data/provinces';
 
 interface UseSeoOptions {
   provinceName?: string | null;
@@ -12,9 +13,16 @@ interface UseSeoOptions {
 export function useSeo({ provinceName, activeItem, totalCount, latestItem }: UseSeoOptions) {
   useEffect(() => {
     const origin = window.location.origin;
-    let pageTitle = 'Türkiye Deprem İzleme - Canlı AFAD Haritası ve Son Depremler';
-    let metaDescription = 'AFAD anlık açık verileriyle Türkiye ve komşu ülkelerdeki son depremleri canlı interaktif harita, derinlik, büyüklük ve revizyon geçmişiyle izleyin.';
-    let canonicalUrl = `${origin}/`;
+    const matchedProvince = provinceName ? findProvinceByName(provinceName) : null;
+    const provinceSlug = matchedProvince?.slug;
+
+    // Modal query parameters should NEVER alter canonical tags
+    const canonicalUrl = provinceSlug
+      ? `${origin}/son-depremler/${provinceSlug}`
+      : `${origin}/`;
+
+    let pageTitle = 'Türkiye Deprem İzleme - Canlı AFAD & Kandilli Haritası ve Son Depremler';
+    let metaDescription = 'AFAD ve Kandilli anlık açık verileriyle Türkiye ve komşu ülkelerdeki son depremleri canlı interaktif harita, derinlik, büyüklük ve revizyon geçmişiyle izleyin.';
 
     if (activeItem) {
       const loc = parseItemLocation(activeItem);
@@ -22,12 +30,10 @@ export function useSeo({ provinceName, activeItem, totalCount, latestItem }: Use
         ? `M${activeItem.magnitude.value}`
         : 'Deprem';
       pageTitle = `${magVal} - ${loc.displayTitle} Depremi | Türkiye Deprem İzleme`;
-      metaDescription = `${loc.displayTitle} bölgesinde gerçekleşen ${magVal} büyüklüğündeki depremin koordinatları, odak derinliği (${activeItem.depthKm ?? '-'} km) ve AFAD revizyon verileri.`;
-      canonicalUrl = `${origin}/?event=${encodeURIComponent(activeItem.id)}`;
+      metaDescription = `${loc.displayTitle} bölgesinde gerçekleşen ${magVal} büyüklüğündeki depremin koordinatları, odak derinliği (${activeItem.depthKm ?? '-'} km) ve sismik verileri.`;
     } else if (provinceName) {
-      pageTitle = `${provinceName} Son Depremler - Anlık AFAD Haritası | Türkiye Deprem İzleme`;
-      metaDescription = `${provinceName} ve çevresinde son 24 saatte meydana gelen tüm sarsıntılar, AFAD deprem listesi ve canlı fay haritası ile anlık güncellenmektedir.`;
-      canonicalUrl = `${origin}/son-depremler/${encodeURIComponent(provinceName.toLowerCase())}`;
+      pageTitle = `${provinceName} Son Depremler - Canlı Deprem Haritası | Türkiye Deprem İzleme`;
+      metaDescription = `${provinceName} ve çevresinde meydana gelen güncel sarsıntılar, son deprem listesi ve canlı fay haritası ile anlık güncellenmektedir.`;
     }
 
     document.title = pageTitle;
@@ -65,37 +71,17 @@ export function useSeo({ provinceName, activeItem, totalCount, latestItem }: Use
     setOgTag('og:description', metaDescription);
     setOgTag('og:url', canonicalUrl);
 
-    // Build Schema.org JSON-LD graph (GEO / AI Crawler standard)
+    // Build Schema.org JSON-LD graph (GEO / WebApplication & BreadcrumbList standard)
     const jsonLdGraph: any[] = [
       {
         '@context': 'https://schema.org',
-        '@type': 'Dataset',
-        '@id': `${origin}/#dataset`,
-        name: 'Türkiye ve Çevresi Deprem Kataloğu (AFAD)',
-        description: 'T.C. İçişleri Bakanlığı AFAD açık veri servislerinden 5 dakikada bir senkronize edilen gerçek zamanlı sismik veri tabanı.',
+        '@type': 'WebApplication',
+        '@id': `${origin}/#webapp`,
+        name: 'Türkiye Canlı Deprem Takip ve Fay Hattı Haritası',
+        description: 'AFAD ve Kandilli Rasathanesi kamuya açık verileriyle Türkiye son depremlerini canlı harita üzerinde gösteren bağımsız sismik izleme platformu.',
         url: origin,
-        license: 'https://deprem.afad.gov.tr',
-        creator: {
-          '@type': 'Organization',
-          name: 'AFAD Deprem Dairesi Başkanlığı',
-          url: 'https://deprem.afad.gov.tr'
-        },
-        distribution: [
-          {
-            '@type': 'DataDownload',
-            encodingFormat: 'application/json',
-            contentUrl: `${origin}/api/v1/earthquakes`
-          }
-        ]
-      },
-      {
-        '@context': 'https://schema.org',
-        '@type': 'SpecialAnnouncement',
-        '@id': `${origin}/#announcement`,
-        name: 'Türkiye Canlı Deprem Bilgilendirme ve İzleme Platformu',
-        text: 'Acil durumlarda AFAD verisiyle eşzamanlı çalışan, internet bağlantısı kopsa dahi PWA ile önbellekten çalışan sismik izleme aracı.',
-        category: 'https://schema.org/GovernmentService',
-        url: origin
+        applicationCategory: 'UtilityApplication',
+        operatingSystem: 'All'
       },
       {
         '@context': 'https://schema.org',
@@ -105,13 +91,13 @@ export function useSeo({ provinceName, activeItem, totalCount, latestItem }: Use
             '@type': 'ListItem',
             position: 1,
             name: 'Ana Sayfa',
-            item: origin
+            item: `${origin}/`
           },
-          ...(provinceName ? [{
+          ...(provinceName && provinceSlug ? [{
             '@type': 'ListItem',
             position: 2,
             name: `${provinceName} Son Depremler`,
-            item: canonicalUrl
+            item: `${origin}/son-depremler/${provinceSlug}`
           }] : [])
         ]
       }
@@ -119,10 +105,11 @@ export function useSeo({ provinceName, activeItem, totalCount, latestItem }: Use
 
     if (activeItem) {
       const loc = parseItemLocation(activeItem);
+      const srcName = activeItem.source === 'KOERI' ? 'Kandilli Rasathanesi' : 'AFAD';
       jsonLdGraph.push({
         '@context': 'https://schema.org',
         '@type': 'Event',
-        '@id': `${origin}/?event=${activeItem.id}`,
+        '@id': `${origin}/?event=${encodeURIComponent(activeItem.id)}`,
         name: `${loc.displayTitle} Depremi`,
         startDate: activeItem.occurredAt,
         location: {
@@ -134,7 +121,7 @@ export function useSeo({ provinceName, activeItem, totalCount, latestItem }: Use
             longitude: activeItem.longitude
           }
         },
-        description: `${loc.displayTitle} bölgesinde M${activeItem.magnitude?.value ?? '-'} büyüklüğünde, ${activeItem.depthKm ?? '-'} km odak derinliğinde AFAD tarafından kaydedilen deprem.`
+        description: `${loc.displayTitle} bölgesinde M${activeItem.magnitude?.value ?? '-'} büyüklüğünde, ${activeItem.depthKm ?? '-'} km odak derinliğinde ${srcName} tarafından kaydedilen deprem.`
       });
     }
 

@@ -42,7 +42,7 @@ def fetch_interval(start_dt: datetime, end_dt: datetime, retries: int = 3) -> pd
 def download_historical_catalog(
     start_date: datetime,
     end_date: datetime,
-    chunk_days: int = 15,
+    chunk_days: int = 2,
     delay_sec: float = 0.5,
     output_filename: str = "afad_catalog.parquet"
 ) -> pd.DataFrame:
@@ -101,4 +101,4 @@ if __name__ == "__main__":
     # Test çalıştırması: Son 60 günün verisini indir
     now = datetime.now(timezone.utc)
     sixty_days_ago = now - timedelta(days=60)
-    download_historical_catalog(sixty_days_ago, now, chunk_days=15)
+    download_historical_catalog(sixty_days_ago, now, chunk_days=2)

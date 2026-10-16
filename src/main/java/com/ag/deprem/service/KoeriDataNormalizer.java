@@ -114,7 +114,8 @@ public class KoeriDataNormalizer {
         String quality = cleanText(raw.getSolutionQuality());
         dto.setSolutionQuality(quality);
 
-        dto.setIsEventUpdate(false);
+        boolean isRevision = quality != null && quality.toUpperCase(Locale.ROOT).contains("REV");
+        dto.setIsEventUpdate(isRevision);
 
         // 8. Payload and Normalized Hashes
         dto.setSourcePayloadHash(computeRawHash(raw));
@@ -199,7 +200,7 @@ public class KoeriDataNormalizer {
         return sha256Hex(data);
     }
 
-    private String computeNormalizedHash(NormalizedReportDto dto) {
+    public String computeNormalizedHash(NormalizedReportDto dto) {
         String data = String.format("%s|%s|%s|%s|%s|%s|%s|%s|%s",
                 dto.getSourceEventId(),
                 dto.getOccurredAt(),

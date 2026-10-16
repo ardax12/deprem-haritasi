@@ -30,7 +30,12 @@ export const AiSummarySnippet: React.FC<AiSummarySnippetProps> = ({
     }
   }
 
-  const latestItem = items[0];
+  let latestItem = items[0];
+  for (const it of items) {
+    if (new Date(it.occurredAt).getTime() > new Date(latestItem.occurredAt).getTime()) {
+      latestItem = it;
+    }
+  }
   const maxLoc = parseItemLocation(maxItem);
   const maxMagVal = maxItem.magnitude?.value !== null && maxItem.magnitude?.value !== undefined
     ? `M${maxItem.magnitude.value.toFixed(1)}`

@@ -9,6 +9,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Duration;
@@ -121,10 +122,7 @@ public class EventMatchingService {
                 depthDelta = Math.abs(currentRev.getDepthKm() - otherRev.getDepthKm());
             }
 
-            Double magDelta = null;
-            if (currentRev.getMagnitudeValue() != null && otherRev.getMagnitudeValue() != null) {
-                magDelta = Math.abs(currentRev.getMagnitudeValue() - otherRev.getMagnitudeValue());
-            }
+            Double magDelta = computeComparableMagnitudeDelta(currentRev, otherRev);
 
             double score = computeScore(timeDelta, distance, depthDelta, magDelta);
             candidates.add(new CandidateEvaluation(otherRev, timeDelta, distance, depthDelta, magDelta, score));
@@ -206,8 +204,7 @@ public class EventMatchingService {
 
             Double depthDelta = (partnerRev.getDepthKm() != null && rev.getDepthKm() != null)
                     ? Math.abs(partnerRev.getDepthKm() - rev.getDepthKm()) : null;
-            Double magDelta = (partnerRev.getMagnitudeValue() != null && rev.getMagnitudeValue() != null)
-                    ? Math.abs(partnerRev.getMagnitudeValue() - rev.getMagnitudeValue()) : null;
+            Double magDelta = computeComparableMagnitudeDelta(partnerRev, rev);
 
             double s = computeScore(td, dist, depthDelta, magDelta);
             if (s > highestScore) {
@@ -229,15 +226,26 @@ public class EventMatchingService {
         UUID rightRevId = leftRep == reportA ? revB.getId() : revA.getId();
 
         Instant now = Instant.now();
-        EventMatch match = matchRepository.findMatchBetweenReports(leftRep.getId(), rightRep.getId())
-                .orElseGet(() -> {
-                    EventMatch m = new EventMatch();
-                    m.setId(UUID.randomUUID());
-                    m.setLeftReport(leftRep);
-                    m.setRightReport(rightRep);
-                    m.setCreatedAt(now);
-                    return m;
-                });
+        Optional<EventMatch> existingOpt = matchRepository.findMatchBetweenReports(leftRep.getId(), rightRep.getId());
+        if (existingOpt.isPresent()) {
+            EventMatch existing = existingOpt.get();
+            if ("MANUAL".equalsIgnoreCase(existing.getDecisionType())
+                    || "MANUAL_MATCHED".equals(existing.getStatus())
+                    || "REJECTED".equals(existing.getStatus())) {
+                log.debug("Preserving manual match decision ({}) between {} and {}",
+                        existing.getStatus(), leftRep.getId(), rightRep.getId());
+                return;
+            }
+        }
+
+        EventMatch match = existingOpt.orElseGet(() -> {
+            EventMatch m = new EventMatch();
+            m.setId(UUID.randomUUID());
+            m.setLeftReport(leftRep);
+            m.setRightReport(rightRep);
+            m.setCreatedAt(now);
+            return m;
+        });
 
         match.setAlgorithmVersion(ALGORITHM_VERSION);
         match.setTimeDeltaSeconds(eval.getTimeDeltaSeconds());
@@ -270,10 +278,18 @@ public class EventMatchingService {
         EventGroup targetGroup;
         if (memberAOpt.isPresent()) {
             targetGroup = memberAOpt.get().getEventGroup();
-            createGroupMember(targetGroup, reportB, revB, now);
+            boolean sameSourceExists = memberRepository.findByEventGroupId(targetGroup.getId()).stream()
+                    .anyMatch(m -> m.getSourceReport().getSource().equalsIgnoreCase(reportB.getSource()));
+            if (!sameSourceExists) {
+                createGroupMember(targetGroup, reportB, revB, now);
+            }
         } else if (memberBOpt.isPresent()) {
             targetGroup = memberBOpt.get().getEventGroup();
-            createGroupMember(targetGroup, reportA, revA, now);
+            boolean sameSourceExists = memberRepository.findByEventGroupId(targetGroup.getId()).stream()
+                    .anyMatch(m -> m.getSourceReport().getSource().equalsIgnoreCase(reportA.getSource()));
+            if (!sameSourceExists) {
+                createGroupMember(targetGroup, reportA, revA, now);
+            }
         } else {
             // Create a new unified EventGroup
             targetGroup = new EventGroup();
@@ -324,6 +340,21 @@ public class EventMatchingService {
                 matchRepository.save(m);
             }
         }
+
+        // Clean up automatic group membership if it existed so stale groupings are resolved
+        Optional<EventGroupMember> memberOpt = memberRepository.findBySourceReportId(report.getId());
+        if (memberOpt.isPresent()) {
+            EventGroupMember member = memberOpt.get();
+            if ("AUTO".equalsIgnoreCase(member.getMembershipType())) {
+                EventGroup group = member.getEventGroup();
+                memberRepository.delete(member);
+                List<EventGroupMember> remaining = memberRepository.findByEventGroupId(group.getId());
+                if (remaining.isEmpty() || (remaining.size() == 1 && remaining.get(0).getId().equals(member.getId()))) {
+                    groupRepository.delete(group);
+                }
+            }
+        }
+
         evaluateMatchesForReport(report, newRevision);
     }
 
@@ -357,5 +388,23 @@ public class EventMatchingService {
                 Math.sin(dLon / 2) * Math.sin(dLon / 2);
         double c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
         return R * c;
+    }
+
+    private Double computeComparableMagnitudeDelta(SourceReportRevision revA, SourceReportRevision revB) {
+        if (revA == null || revB == null) {
+            return null;
+        }
+        if (revA.getMagMw() != null && revB.getMagMw() != null) {
+            return Math.abs(revA.getMagMw() - revB.getMagMw());
+        } else if (revA.getMagMl() != null && revB.getMagMl() != null) {
+            return Math.abs(revA.getMagMl() - revB.getMagMl());
+        } else if (revA.getMagMd() != null && revB.getMagMd() != null) {
+            return Math.abs(revA.getMagMd() - revB.getMagMd());
+        } else if (revA.getMagnitudeType() != null && revB.getMagnitudeType() != null
+                && revA.getMagnitudeType().equalsIgnoreCase(revB.getMagnitudeType())
+                && revA.getMagnitudeValue() != null && revB.getMagnitudeValue() != null) {
+            return Math.abs(revA.getMagnitudeValue() - revB.getMagnitudeValue());
+        }
+        return null;
     }
 }

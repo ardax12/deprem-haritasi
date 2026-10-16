@@ -68,8 +68,9 @@ export async function fetchEarthquakes(
   return res.json();
 }
 
-export async function fetchEarthquakeDetail(id: string): Promise<EarthquakeDetail> {
+export async function fetchEarthquakeDetail(id: string, signal?: AbortSignal): Promise<EarthquakeDetail> {
   const res = await fetch(`${API_BASE}/earthquakes/${encodeURIComponent(id)}`, {
+    signal,
     headers: {
       'Accept': 'application/json'
     }

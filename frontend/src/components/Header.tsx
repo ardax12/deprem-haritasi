@@ -78,7 +78,7 @@ export const Header: React.FC<HeaderProps> = ({
             <a href="https://deprem.afad.gov.tr" target="_blank" rel="noopener noreferrer" className="external-link">
               AFAD
             </a>{' '}ve{' '}
-            <a href="http://www.koeri.boun.edu.tr/scripts/lst0.asp" target="_blank" rel="noopener noreferrer" className="external-link">
+            <a href="https://www.koeri.boun.edu.tr/scripts/lst0.asp" target="_blank" rel="noopener noreferrer" className="external-link">
               Kandilli Rasathanesi (KOERI-BDTİM)
             </a>{' '}kamuya açık bültenlerinden derlenmektedir.
           </span>

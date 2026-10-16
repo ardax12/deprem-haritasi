@@ -3,6 +3,7 @@ package com.ag.deprem.service;
 import com.ag.deprem.model.dto.AfadRawEventDto;
 import com.ag.deprem.model.dto.ArchiveManifestDto;
 import com.ag.deprem.repository.ArchiveManifestRepository;
+import com.ag.deprem.repository.EventMatchRepository;
 import com.ag.deprem.repository.SourceReportRepository;
 import com.ag.deprem.repository.SourceReportRevisionRepository;
 import org.junit.jupiter.api.BeforeEach;
@@ -38,6 +39,9 @@ class ArchiveExporterServiceTest {
     private SourceReportRevisionRepository revisionRepository;
 
     @Autowired
+    private EventMatchRepository matchRepository;
+
+    @Autowired
     private ObjectMapper objectMapper;
 
     @TempDir
@@ -59,6 +63,7 @@ class ArchiveExporterServiceTest {
         archiveExporterService = new ArchiveExporterService(
                 revisionRepository,
                 manifestRepository,
+                matchRepository,
                 objectMapper,
                 tempArchiveDir.toString()
         );

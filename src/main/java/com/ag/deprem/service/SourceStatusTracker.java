@@ -38,7 +38,7 @@ public class SourceStatusTracker {
 
         public synchronized String getFreshnessStatus(Instant now) {
             if (lastSuccessfulFetchAt == null) {
-                return "delayed";
+                return lastError != null ? "error" : "delayed";
             }
             long minutesAgo = Duration.between(lastSuccessfulFetchAt, now).toMinutes();
             if (minutesAgo > 60) {
@@ -83,6 +83,10 @@ public class SourceStatusTracker {
 
     public String getFreshnessStatus(String source, Instant now) {
         return getSourceState(source).getFreshnessStatus(now);
+    }
+
+    public Instant getLastSuccessfulFetchAt(String source) {
+        return getSourceState(source).getLastSuccessfulFetchAt();
     }
 
     // --- Backward compatibility methods (defaults to AFAD) ---

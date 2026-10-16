@@ -41,7 +41,6 @@ public class SeoController {
     @GetMapping(value = "/sitemap.xml", produces = MediaType.APPLICATION_XML_VALUE)
     public ResponseEntity<String> getSitemap(HttpServletRequest request) {
         String cleanBase = resolveBaseUrl(request);
-        String nowIso = Instant.now().truncatedTo(ChronoUnit.SECONDS).toString();
 
         StringBuilder xml = new StringBuilder();
         xml.append("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n");
@@ -50,7 +49,6 @@ public class SeoController {
         // Main entrypoint
         xml.append("  <url>\n");
         xml.append("    <loc>").append(cleanBase).append("/</loc>\n");
-        xml.append("    <lastmod>").append(nowIso).append("</lastmod>\n");
         xml.append("    <changefreq>always</changefreq>\n");
         xml.append("    <priority>1.0</priority>\n");
         xml.append("  </url>\n");
@@ -59,7 +57,6 @@ public class SeoController {
         for (String slug : TURKISH_PROVINCE_SLUGS) {
             xml.append("  <url>\n");
             xml.append("    <loc>").append(cleanBase).append("/son-depremler/").append(slug).append("</loc>\n");
-            xml.append("    <lastmod>").append(nowIso).append("</lastmod>\n");
             xml.append("    <changefreq>hourly</changefreq>\n");
             xml.append("    <priority>0.8</priority>\n");
             xml.append("  </url>\n");
@@ -81,7 +78,7 @@ public class SeoController {
         StringBuilder robots = new StringBuilder();
         robots.append("User-agent: *\n");
         robots.append("Allow: /\n");
-        robots.append("Disallow: /api/v1/archive/\n\n");
+        robots.append("Disallow: /api/\n\n");
 
         // Explicit allow rules for Generative AI search crawlers (GEO)
         robots.append("# Generative Engine Optimization (GEO) Bot Access\n");
@@ -120,14 +117,18 @@ public class SeoController {
     }
 
     private String resolveBaseUrl(HttpServletRequest request) {
-        if (baseUrl != null && !baseUrl.isBlank() && !baseUrl.contains("depremizleme.com")) {
+        if (baseUrl != null && !baseUrl.isBlank()) {
             return baseUrl.replaceAll("/+$", "");
         }
 
         String proto = request.getHeader("X-Forwarded-Proto");
-        if (proto == null || proto.isBlank()) {
+        if (proto == null || proto.isBlank() || (!"http".equalsIgnoreCase(proto) && !"https".equalsIgnoreCase(proto))) {
             proto = request.getScheme();
+            if (proto == null || (!"http".equalsIgnoreCase(proto) && !"https".equalsIgnoreCase(proto))) {
+                proto = "https";
+            }
         }
+        proto = proto.toLowerCase();
 
         String host = request.getHeader("X-Forwarded-Host");
         if (host == null || host.isBlank()) {
@@ -136,9 +137,17 @@ public class SeoController {
         if (host == null || host.isBlank()) {
             host = request.getServerName();
             int port = request.getServerPort();
-            if (port != 80 && port != 443) {
+            if (port != 80 && port != 443 && port > 0) {
                 host = host + ":" + port;
             }
+        }
+
+        if (host != null && host.contains(",")) {
+            host = host.split(",")[0].trim();
+        }
+
+        if (host == null || !host.matches("^[a-zA-Z0-9.-]+(:[0-9]{1,5})?$")) {
+            host = "localhost:8080";
         }
 
         if (host.endsWith(":80") && "http".equalsIgnoreCase(proto)) {

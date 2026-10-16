@@ -12,6 +12,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
@@ -140,6 +141,16 @@ public class IngestionService {
             Optional<SourceReport> existingOpt = sourceReportRepository
                     .findBySourceAndSourceEventId(dto.getSource(), dto.getSourceEventId());
 
+            if (existingOpt.isEmpty() && "KOERI".equalsIgnoreCase(dto.getSource())) {
+                existingOpt = resolveExistingKoeriReport(dto);
+                if (existingOpt.isPresent()) {
+                    SourceReport existingReport = existingOpt.get();
+                    dto.setSourceEventId(existingReport.getSourceEventId());
+                    dto.setNormalizedHash(koeriNormalizer.computeNormalizedHash(dto));
+                    dto.setIsEventUpdate(true);
+                }
+            }
+
             if (existingOpt.isEmpty()) {
                 // New Source Report
                 SourceReport report = new SourceReport();
@@ -156,6 +167,8 @@ public class IngestionService {
 
                 sourceReportRepository.save(report);
                 revisionRepository.save(revision);
+                sourceReportRepository.flush();
+                revisionRepository.flush();
                 summary.inserted++;
 
                 try {
@@ -188,6 +201,8 @@ public class IngestionService {
 
                     sourceReportRepository.save(report);
                     revisionRepository.save(newRevision);
+                    sourceReportRepository.flush();
+                    revisionRepository.flush();
                     summary.updated++;
 
                     try {
@@ -201,6 +216,52 @@ public class IngestionService {
         }
 
         return summary;
+    }
+
+    private Optional<SourceReport> resolveExistingKoeriReport(NormalizedReportDto dto) {
+        if (dto.getOccurredAt() == null || dto.getLatitude() == null || dto.getLongitude() == null) {
+            return Optional.empty();
+        }
+        Instant start = dto.getOccurredAt().minusSeconds(15);
+        Instant end = dto.getOccurredAt().plusSeconds(15);
+        List<SourceReportRevision> candidates = revisionRepository.findCurrentRevisionsBySourceBetween("KOERI", start, end);
+        if (candidates.isEmpty()) {
+            return Optional.empty();
+        }
+
+        SourceReportRevision bestMatch = null;
+        double minDistance = Double.MAX_VALUE;
+
+        for (SourceReportRevision cand : candidates) {
+            double dist = EventMatchingService.haversineDistanceKm(
+                    dto.getLatitude(), dto.getLongitude(),
+                    cand.getLatitude(), cand.getLongitude()
+            );
+            if (dist > 15.0) {
+                continue;
+            }
+
+            long timeDelta = Math.abs(Duration.between(dto.getOccurredAt(), cand.getOccurredAt()).toSeconds());
+            boolean isRevisionIndicator = Boolean.TRUE.equals(dto.getIsEventUpdate());
+            boolean closeSpatioTemporal = (timeDelta <= 5 && dist <= 5.0);
+
+            // Check magnitude delta if both have values
+            if (dto.getMagnitudeValue() != null && cand.getMagnitudeValue() != null) {
+                double magDiff = Math.abs(dto.getMagnitudeValue() - cand.getMagnitudeValue());
+                if (magDiff > 0.8) {
+                    continue;
+                }
+            }
+
+            if (isRevisionIndicator || closeSpatioTemporal) {
+                if (dist < minDistance) {
+                    minDistance = dist;
+                    bestMatch = cand;
+                }
+            }
+        }
+
+        return bestMatch != null ? Optional.of(bestMatch.getSourceReport()) : Optional.empty();
     }
 
     private SourceReportRevision createRevision(SourceReport report, NormalizedReportDto dto, int revNumber, Instant now) {

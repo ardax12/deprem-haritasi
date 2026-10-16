@@ -1,6 +1,16 @@
 # Multi-stage build for Türkiye Deprem İzleme Haritası
 
-# Stage 1: Build Java application
+# Stage 1: Build React Frontend
+FROM node:22-alpine AS frontend-builder
+WORKDIR /app/frontend
+
+COPY frontend/package*.json ./
+RUN npm ci
+
+COPY frontend/ ./
+RUN npm run build
+
+# Stage 2: Build Java application
 FROM eclipse-temurin:21-jdk-alpine AS builder
 WORKDIR /app
 
@@ -14,18 +24,22 @@ RUN chmod +x gradlew
 # Pre-fetch dependencies for Docker cache optimization
 RUN ./gradlew dependencies --no-daemon || true
 
-# Copy source code including static frontend assets
+# Copy source code
 COPY src src
+
+# Copy compiled frontend from Stage 1 into Spring Boot static resources
+COPY --from=frontend-builder /app/frontend/dist src/main/resources/static
 
 # Build executable Spring Boot jar
 RUN ./gradlew bootJar --no-daemon -x test
 
-# Stage 2: Minimal runtime image
+# Stage 3: Minimal runtime image
 FROM eclipse-temurin:21-jre-alpine AS runner
 WORKDIR /app
 
-# Create a non-root system user for security
-RUN addgroup -S appgroup && adduser -S appuser -G appgroup
+# Create a non-root system user and archive directory with proper permissions
+RUN addgroup -S appgroup && adduser -S appuser -G appgroup \
+    && mkdir -p /app/archive && chown -R appuser:appgroup /app/archive
 USER appuser
 
 # Copy jar from builder

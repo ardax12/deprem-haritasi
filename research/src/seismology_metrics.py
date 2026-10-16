@@ -47,7 +47,11 @@ def calculate_b_value_mle(
         return np.nan, np.nan, n
 
     mean_m = np.mean(subset)
-    b_val = np.log10(np.e) / (mean_m - (mc - (bin_width / 2.0)))
+    denom = mean_m - (mc - (bin_width / 2.0))
+    if denom <= 1e-6:
+        return np.nan, np.nan, n
+
+    b_val = np.log10(np.e) / denom
     std_err = b_val / np.sqrt(n)
 
     return float(b_val), float(std_err), n
@@ -59,7 +63,10 @@ def calculate_benioff_strain(magnitudes: np.ndarray) -> np.ndarray:
     Sismik enerji salınımının kareköküyle orantılıdır: S = 10^(0.75 * M)
     Fayda biriken ve serbest kalan elastik gerilimin kümülatif göstergesidir.
     """
+    if magnitudes is None or len(magnitudes) == 0:
+        return np.array([])
     valid = np.nan_to_num(magnitudes, nan=0.0)
+    valid = np.clip(valid, 0.0, 10.0)
     strain = 10.0 ** (0.75 * valid)
     return np.cumsum(strain)
 

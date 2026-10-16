@@ -73,7 +73,17 @@ public class AfadDataNormalizer {
             dto.getDataQualityNotes().add("Missing or unparseable magnitude");
         }
         dto.setMagnitudeValue(magnitude);
-        dto.setMagnitudeType(cleanText(raw.getType()));
+        String magType = cleanText(raw.getType());
+        dto.setMagnitudeType(magType);
+        if (magType != null && magnitude != null) {
+            if ("MW".equalsIgnoreCase(magType)) {
+                dto.setMagMw(magnitude);
+            } else if ("ML".equalsIgnoreCase(magType)) {
+                dto.setMagMl(magnitude);
+            } else if ("MD".equalsIgnoreCase(magType)) {
+                dto.setMagMd(magnitude);
+            }
+        }
 
         Double depth = parseDouble(raw.getDepth());
         if (depth == null) {

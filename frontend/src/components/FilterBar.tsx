@@ -55,7 +55,7 @@ export const FilterBar: React.FC<FilterBarProps> = ({
 
   const isChipActive = (type: 'all' | 'felt' | 'major' | '3d') => {
     if (type === 'all') {
-      return filters.minMagnitude === null && filters.timeRange === '24h' && !filters.place;
+      return filters.minMagnitude === null && filters.timeRange === '24h' && !filters.place && (!filters.source || filters.source === 'ALL');
     }
     if (type === 'felt') {
       return filters.minMagnitude === 3.5 && filters.timeRange === '24h';
@@ -147,7 +147,22 @@ export const FilterBar: React.FC<FilterBarProps> = ({
             <option value="3.0">M ≥ 3.0</option>
             <option value="3.5">M ≥ 3.5</option>
             <option value="4.0">M ≥ 4.0</option>
+            <option value="4.5">M ≥ 4.5</option>
             <option value="5.0">M ≥ 5.0</option>
+          </select>
+        </div>
+
+        <div className="filter-group">
+          <label htmlFor="source-select" className="filter-label">Veri Kaynağı</label>
+          <select
+            id="source-select"
+            className="filter-select"
+            value={filters.source || 'ALL'}
+            onChange={(e) => onChange({ source: e.target.value as any })}
+          >
+            <option value="ALL">Tümü (AFAD & Kandilli)</option>
+            <option value="AFAD">Yalnızca AFAD</option>
+            <option value="KOERI">Yalnızca Kandilli</option>
           </select>
         </div>
 
@@ -209,7 +224,7 @@ export const FilterBar: React.FC<FilterBarProps> = ({
             </>
           )}
         </span>
-        {(filters.minMagnitude !== null || filters.place !== '' || filters.timeRange !== '24h') && (
+        {(filters.minMagnitude !== null || filters.place !== '' || filters.timeRange !== '24h' || (filters.source && filters.source !== 'ALL') || filters.sortBy !== 'occurredAt:desc') && (
           <button type="button" className="btn-reset" onClick={onReset} title="Filtreleri Temizle" aria-label="Filtreleri Temizle">
             ✕ Temizle
           </button>

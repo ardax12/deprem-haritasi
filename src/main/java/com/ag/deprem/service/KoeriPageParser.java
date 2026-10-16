@@ -8,6 +8,7 @@ import org.springframework.stereotype.Service;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -98,7 +99,7 @@ public class KoeriPageParser {
                 // Check if fixed column layout applies: in lst0.asp, quality is separated by 2 or more spaces or at col >= 121
                 String[] parts = remaining.split("\\s{2,}");
                 if (parts.length >= 2) {
-                    location = parts[0].trim();
+                    location = String.join(" ", Arrays.copyOfRange(parts, 0, parts.length - 1)).trim();
                     quality = parts[parts.length - 1].trim();
                 } else {
                     location = remaining;

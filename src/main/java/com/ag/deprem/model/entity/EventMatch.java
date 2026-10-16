@@ -5,7 +5,9 @@ import java.time.Instant;
 import java.util.UUID;
 
 @Entity
-@Table(name = "event_match")
+@Table(name = "event_match", uniqueConstraints = {
+    @UniqueConstraint(name = "uq_event_match_reports", columnNames = {"left_report_id", "right_report_id"})
+})
 public class EventMatch {
 
     @Id

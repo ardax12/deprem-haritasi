@@ -1,6 +1,4 @@
 HELP.md
-*.md
-**/*.md
 .gradle
 build/
 !gradle/wrapper/gradle-wrapper.jar
@@ -44,9 +42,15 @@ frontend/dist/
 graphify-out/
 
 ### Python / Research ###
-research/
+research/data/
+research/**/__pycache__/
+*.parquet
+.venv/
 
 ### Secrets & Environment ###
 *.env
 *.env.*
 !*.env.example
+*.pem
+*.key
+*.crt

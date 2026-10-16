@@ -32,7 +32,7 @@ public class KoeriApiClient {
     private final String koeriPageUrl;
     private final SourceStatusTracker statusTracker;
 
-    public KoeriApiClient(@Value("${koeri.page.url:http://www.koeri.boun.edu.tr/scripts/lst0.asp}") String koeriPageUrl,
+    public KoeriApiClient(@Value("${koeri.page.url:https://www.koeri.boun.edu.tr/scripts/lst0.asp}") String koeriPageUrl,
                           @Value("${koeri.http.connect-timeout-ms:10000}") int connectTimeoutMs,
                           @Value("${koeri.http.read-timeout-ms:20000}") int readTimeoutMs,
                           SourceStatusTracker statusTracker) {
@@ -70,7 +70,6 @@ public class KoeriApiClient {
                 }
 
                 String pageContent = new String(responseBytes, WINDOWS_1254);
-                statusTracker.recordSuccess("KOERI", now);
                 log.info("Successfully fetched KOERI page ({} bytes, attempt {})", responseBytes.length, attempt);
                 return pageContent;
             } catch (Exception e) {

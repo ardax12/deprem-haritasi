@@ -28,6 +28,7 @@ public class DataRetentionService {
     private final SourceReportRepository sourceReportRepository;
     private final SourceReportRevisionRepository revisionRepository;
     private final ArchiveExporterService archiveExporterService;
+    private final com.ag.deprem.repository.EventGroupRepository eventGroupRepository;
     private final int retentionDays;
     private final boolean autoExportBeforeCleanup;
     private final boolean dryRun;
@@ -35,12 +36,14 @@ public class DataRetentionService {
     public DataRetentionService(SourceReportRepository sourceReportRepository,
                                 SourceReportRevisionRepository revisionRepository,
                                 ArchiveExporterService archiveExporterService,
+                                com.ag.deprem.repository.EventGroupRepository eventGroupRepository,
                                 @Value("${app.retention.days:30}") int retentionDays,
                                 @Value("${app.archive.auto-export-before-cleanup:true}") boolean autoExportBeforeCleanup,
                                 @Value("${app.retention.dry-run:false}") boolean dryRun) {
         this.sourceReportRepository = sourceReportRepository;
         this.revisionRepository = revisionRepository;
         this.archiveExporterService = archiveExporterService;
+        this.eventGroupRepository = eventGroupRepository;
         this.retentionDays = retentionDays;
         this.autoExportBeforeCleanup = autoExportBeforeCleanup;
         this.dryRun = dryRun;
@@ -95,7 +98,10 @@ public class DataRetentionService {
             }
 
             sourceReportRepository.deleteAll(oldReports);
-            log.info("Data retention cleanup completed: safely removed {} old reports and their revisions.", oldReports.size());
+            sourceReportRepository.flush();
+            int purgedGroups = eventGroupRepository.deleteEmptyGroups();
+            log.info("Data retention cleanup completed: safely removed {} old reports, their revisions, and {} empty event groups.",
+                    oldReports.size(), purgedGroups);
         } catch (Exception e) {
             log.error("Error during data retention cleanup: {}", e.getMessage(), e);
         }

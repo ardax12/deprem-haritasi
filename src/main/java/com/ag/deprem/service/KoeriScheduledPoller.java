@@ -7,6 +7,7 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
+import java.time.Instant;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -19,14 +20,17 @@ public class KoeriScheduledPoller {
     private final KoeriApiClient apiClient;
     private final KoeriPageParser parser;
     private final IngestionService ingestionService;
+    private final SourceStatusTracker statusTracker;
     private final AtomicBoolean isPolling = new AtomicBoolean(false);
 
     public KoeriScheduledPoller(KoeriApiClient apiClient,
                                 KoeriPageParser parser,
-                                IngestionService ingestionService) {
+                                IngestionService ingestionService,
+                                SourceStatusTracker statusTracker) {
         this.apiClient = apiClient;
         this.parser = parser;
         this.ingestionService = ingestionService;
+        this.statusTracker = statusTracker;
     }
 
     @Scheduled(fixedDelayString = "${koeri.sync.interval-ms:600000}", initialDelayString = "${koeri.sync.initial-delay-ms:15000}")
@@ -42,14 +46,20 @@ public class KoeriScheduledPoller {
             KoeriPageParser.ParseResult parseResult = parser.parse(pageContent);
             List<KoeriRawEventDto> events = parseResult.getEvents();
 
-            if (events.isEmpty()) {
-                log.warn("KOERI poller retrieved 0 events from page (total lines: {})", parseResult.getTotalLines());
+            if (events.isEmpty() && parseResult.getTotalLines() > 0) {
+                String msg = "KOERI poller retrieved 0 events from page (total lines: " + parseResult.getTotalLines() + ")";
+                log.warn(msg);
+                statusTracker.recordFailure("KOERI", Instant.now(), msg);
             } else {
-                IngestionService.IngestionSummary summary = ingestionService.ingestKoeriEvents(events);
-                log.info("Scheduled KOERI sync finished: parsed={}, summary={}", events.size(), summary);
+                statusTracker.recordSuccess("KOERI", Instant.now());
+                if (!events.isEmpty()) {
+                    IngestionService.IngestionSummary summary = ingestionService.ingestKoeriEvents(events);
+                    log.info("Scheduled KOERI sync finished: parsed={}, summary={}", events.size(), summary);
+                }
             }
         } catch (Exception e) {
             log.error("Error during scheduled KOERI sync: {}", e.getMessage(), e);
+            statusTracker.recordFailure("KOERI", Instant.now(), e.getMessage());
         } finally {
             isPolling.set(false);
         }

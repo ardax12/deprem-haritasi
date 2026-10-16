@@ -35,15 +35,18 @@ public class ArchiveExporterService {
 
     private final SourceReportRevisionRepository revisionRepository;
     private final ArchiveManifestRepository manifestRepository;
+    private final com.ag.deprem.repository.EventMatchRepository matchRepository;
     private final ObjectMapper objectMapper;
     private final String archiveDirectory;
 
     public ArchiveExporterService(SourceReportRevisionRepository revisionRepository,
                                   ArchiveManifestRepository manifestRepository,
+                                  com.ag.deprem.repository.EventMatchRepository matchRepository,
                                   ObjectMapper objectMapper,
                                   @Value("${app.archive.directory:./archive}") String archiveDirectory) {
         this.revisionRepository = revisionRepository;
         this.manifestRepository = manifestRepository;
+        this.matchRepository = matchRepository;
         this.objectMapper = objectMapper;
         this.archiveDirectory = archiveDirectory;
     }
@@ -272,6 +275,17 @@ public class ArchiveExporterService {
         dto.setMagMd(rev.getMagMd());
         dto.setMagMl(rev.getMagMl());
         dto.setMagMw(rev.getMagMw());
+
+        List<com.ag.deprem.model.entity.EventMatch> matches = matchRepository.findAllByReportId(report.getId());
+        for (com.ag.deprem.model.entity.EventMatch m : matches) {
+            if ("AUTO_MATCHED".equals(m.getStatus()) || "MANUAL_MATCHED".equals(m.getStatus())) {
+                dto.setMatchStatus(m.getStatus());
+                SourceReport partner = m.getLeftReport().getId().equals(report.getId()) ? m.getRightReport() : m.getLeftReport();
+                dto.setMatchedEventId(partner.getSourceEventId());
+                break;
+            }
+        }
+
         return dto;
     }
 }

@@ -27,11 +27,20 @@ public interface SourceReportRevisionRepository extends JpaRepository<SourceRepo
     @Query("SELECT r FROM SourceReportRevision r JOIN FETCH r.sourceReport WHERE r.id = r.sourceReport.currentRevisionId AND r.occurredAt >= :start AND r.occurredAt < :end ORDER BY r.occurredAt ASC")
     List<SourceReportRevision> findAllCurrentRevisionsBetween(@Param("start") Instant start, @Param("end") Instant end);
 
+    @Query("SELECT r FROM SourceReportRevision r JOIN FETCH r.sourceReport sr WHERE r.id = sr.currentRevisionId AND sr.source = :source AND r.occurredAt >= :start AND r.occurredAt <= :end")
+    List<SourceReportRevision> findCurrentRevisionsBySourceBetween(@Param("source") String source, @Param("start") Instant start, @Param("end") Instant end);
+
     @Query("SELECT MAX(r.occurredAt) FROM SourceReportRevision r")
     Optional<Instant> findLatestOccurredAt();
 
     @Query("SELECT MIN(r.occurredAt) FROM SourceReportRevision r")
     Optional<Instant> findEarliestOccurredAt();
+
+    @Query("SELECT MAX(r.occurredAt) FROM SourceReportRevision r WHERE r.sourceReport.source = :source")
+    Optional<Instant> findLatestOccurredAtBySource(@Param("source") String source);
+
+    @Query("SELECT MIN(r.occurredAt) FROM SourceReportRevision r WHERE r.sourceReport.source = :source")
+    Optional<Instant> findEarliestOccurredAtBySource(@Param("source") String source);
 
     @Query("SELECT r FROM SourceReportRevision r JOIN FETCH r.sourceReport WHERE r.id = r.sourceReport.currentRevisionId AND r.occurredAt < :cutoff ORDER BY r.occurredAt ASC")
     List<SourceReportRevision> findCurrentRevisionsOccurredBefore(@Param("cutoff") Instant cutoff);

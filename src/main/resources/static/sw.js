@@ -59,13 +59,21 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // 3. Navigation requests: Network-First fallback to cached /index.html
+  // 3. Navigation requests: Network-First with Cache Update, falling back to cached /index.html
   if (request.mode === 'navigate') {
     event.respondWith(
-      fetch(request).catch(async () => {
-        const cachedIndex = await caches.match('/index.html');
-        return cachedIndex || (await caches.match('/')) || Response.error();
-      })
+      fetch(request)
+        .then((response) => {
+          if (response && response.status === 200) {
+            const clone = response.clone();
+            caches.open(CACHE_NAME).then((cache) => cache.put('/index.html', clone));
+          }
+          return response;
+        })
+        .catch(async () => {
+          const cachedIndex = await caches.match('/index.html');
+          return cachedIndex || (await caches.match('/')) || Response.error();
+        })
     );
     return;
   }
@@ -85,7 +93,7 @@ self.addEventListener('fetch', (event) => {
           });
         }
         return networkResponse;
-      } catch (err) {
+      } catch (_err) {
         // Return a proper offline Response instead of null
         return new Response('Network offline and asset not cached', {
           status: 503,

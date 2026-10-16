@@ -41,6 +41,16 @@ export const EarthquakeDetailModal: React.FC<EarthquakeDetailModalProps> = ({ it
     }
   };
 
+  const formatUtcDate = (isoStr?: string | null) => {
+    if (!isoStr) return '-';
+    try {
+      const d = new Date(isoStr);
+      return d.toISOString().replace('T', ' ').substring(0, 19) + ' UTC';
+    } catch {
+      return isoStr;
+    }
+  };
+
   const formatSolutionQuality = (quality?: string | null) => {
     if (!quality) return '';
     const q = quality.toUpperCase();
@@ -55,7 +65,8 @@ export const EarthquakeDetailModal: React.FC<EarthquakeDetailModalProps> = ({ it
     const shareUrl = `${window.location.origin}${window.location.pathname}?event=${encodeURIComponent(item.id)}`;
     const magVal = activeItem?.magnitude?.value !== null && activeItem?.magnitude?.value !== undefined ? `M${activeItem.magnitude.value}` : 'Deprem';
     const shareTitle = `${magVal} - ${parsedLoc.displayTitle}`;
-    const shareText = `${parsedLoc.displayTitle} bölgesinde ${magVal} büyüklüğünde deprem (${formatDate(activeItem?.occurredAt)}). AFAD verisiyle inceleyin:`;
+    const shareSource = activeItem?.source === 'KOERI' ? 'Kandilli' : 'AFAD';
+    const shareText = `${parsedLoc.displayTitle} bölgesinde ${magVal} büyüklüğünde deprem (${formatDate(activeItem?.occurredAt)}). ${shareSource} verisiyle inceleyin:`;
 
     if (typeof navigator !== 'undefined' && navigator.share) {
       try {
@@ -81,18 +92,26 @@ export const EarthquakeDetailModal: React.FC<EarthquakeDetailModalProps> = ({ it
 
   useEffect(() => {
     if (!item) return;
+    setDetail(null);
     setLoading(true);
     setError(null);
 
-    fetchEarthquakeDetail(item.id)
+    const controller = new AbortController();
+
+    fetchEarthquakeDetail(item.id, controller.signal)
       .then(res => {
         setDetail(res);
         setLoading(false);
       })
       .catch(err => {
+        if (err.name === 'AbortError') return;
         setError(err.message || 'Detaylar yüklenemedi');
         setLoading(false);
       });
+
+    return () => {
+      controller.abort();
+    };
   }, [item]);
 
   useEffect(() => {
@@ -215,7 +234,7 @@ export const EarthquakeDetailModal: React.FC<EarthquakeDetailModalProps> = ({ it
               <div className="modal-metric-card">
                 <span className="metric-label">Büyüklük</span>
                 <span className="metric-value-huge">
-                  {detail.current.magnitude?.value !== null ? detail.current.magnitude?.value : 'Yok'}
+                  {detail.current.magnitude?.value !== null && detail.current.magnitude?.value !== undefined ? detail.current.magnitude?.value : 'Raporlanmadı'}
                   <small>{detail.current.magnitude?.type ?? ''}</small>
                 </span>
                 <span className="metric-hint">
@@ -227,7 +246,7 @@ export const EarthquakeDetailModal: React.FC<EarthquakeDetailModalProps> = ({ it
               <div className="modal-metric-card">
                 <span className="metric-label">Odak Derinliği</span>
                 <span className="metric-value-huge">
-                  {detail.current.depthKm !== null ? `${detail.current.depthKm}` : '-'}
+                  {detail.current.depthKm !== null ? `${detail.current.depthKm}` : 'Raporlanmadı'}
                   <small>km</small>
                 </span>
                 <span className="metric-hint">Yeraltı derinliği</span>
@@ -361,7 +380,7 @@ export const EarthquakeDetailModal: React.FC<EarthquakeDetailModalProps> = ({ it
                   </div>
                   <div className="info-item">
                     <span className="info-label">Deprem Oluş Zamanı (UTC):</span>
-                    <span className="info-val">{detail.current.occurredAt}</span>
+                    <span className="info-val">{formatUtcDate(detail.current.occurredAt)}</span>
                   </div>
                   <div className="info-item">
                     <span className="info-label">Uygulamanın Veriyi Alış Zamanı:</span>
@@ -462,7 +481,7 @@ export const EarthquakeDetailModal: React.FC<EarthquakeDetailModalProps> = ({ it
                   <p className="info-text-sm" style={{ margin: 0, color: 'var(--text-secondary, #94a3b8)', fontSize: '0.8125rem' }}>
                     Kaynak: Boğaziçi Üniversitesi Kandilli Rasathanesi ve Deprem Araştırma Enstitüsü, Bölgesel Deprem-Tsunami İzleme ve Değerlendirme Merkezi (KOERI-BDTİM).
                     Veriler kamuya açık bültenlerden derlenmiştir.{' '}
-                    <a href="http://www.koeri.boun.edu.tr/scripts/lst0.asp" target="_blank" rel="noopener noreferrer" className="external-link" style={{ display: 'inline-block', marginTop: '4px' }}>
+                    <a href="https://www.koeri.boun.edu.tr/scripts/lst0.asp" target="_blank" rel="noopener noreferrer" className="external-link" style={{ display: 'inline-block', marginTop: '4px' }}>
                       Kandilli Orijinal Son Depremler Listesi ↗
                     </a>
                   </p>

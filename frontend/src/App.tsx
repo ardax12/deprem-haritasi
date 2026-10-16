@@ -7,7 +7,7 @@ import { EarthquakeDetailModal } from './components/EarthquakeDetailModal';
 import { InfoModal } from './components/InfoModal';
 import { IconMap, IconList, IconWifiOff, IconAlertTriangle } from './components/Icons';
 import { AiSummarySnippet } from './components/AiSummarySnippet';
-import { findProvinceBySlug, type ProvinceData } from './data/provinces';
+import { findProvinceBySlug, findProvinceByName, type ProvinceData } from './data/provinces';
 import { useSeo } from './hooks/useSeo';
 import type { EarthquakeItem, FilterParams, Freshness, PageInfo, EarthquakeDetail } from './types/earthquake';
 import { fetchEarthquakes, fetchEarthquakeDetail, computeTimeWindow, type TimeWindow } from './services/api';
@@ -49,6 +49,7 @@ export function App() {
   const [isOnline, setIsOnline] = useState<boolean>(typeof navigator !== 'undefined' ? navigator.onLine : true);
   const [installPrompt, setInstallPrompt] = useState<any>(null);
 
+  const abortControllerRef = useRef<AbortController | null>(null);
   const activeRequestIdRef = useRef<number>(0);
   const deepLinkedItemRef = useRef<EarthquakeItem | null>(null);
   const currentTimeWindowRef = useRef<TimeWindow>(computeTimeWindow(defaultFilters.timeRange));
@@ -121,6 +122,14 @@ export function App() {
   // Listen to browser Back/Forward (popstate)
   useEffect(() => {
     const handlePopState = () => {
+      const prov = getInitialProvince();
+      setActiveProvince(prov);
+      if (prov) {
+        setFilters(prev => ({ ...prev, place: prov.name }));
+      } else if (typeof window !== 'undefined' && window.location.pathname === '/') {
+        setFilters(prev => ({ ...prev, place: '' }));
+      }
+
       const params = new URLSearchParams(window.location.search);
       const eventId = params.get('event');
       if (!eventId) {
@@ -149,7 +158,9 @@ export function App() {
 
   // Fetch first page whenever filters change, cancelling previous in-flight requests
   useEffect(() => {
+    abortControllerRef.current?.abort();
     const controller = new AbortController();
+    abortControllerRef.current = controller;
     const requestId = ++activeRequestIdRef.current;
     setLoading(true);
     setError(null);
@@ -168,6 +179,17 @@ export function App() {
           setPageInfo(response.page);
           setFreshness(response.freshness);
           setLoading(false);
+
+          try {
+            localStorage.setItem('deprem_last_snapshot', JSON.stringify({
+              items: loadedItems.slice(0, 50),
+              page: response.page,
+              freshness: response.freshness,
+              timestamp: Date.now()
+            }));
+          } catch {
+            // ignore
+          }
         }
       })
       .catch(err => {
@@ -175,6 +197,19 @@ export function App() {
         if (requestId === activeRequestIdRef.current) {
           setError(err.message || 'Veriler alınamadı');
           setLoading(false);
+          try {
+            const cached = localStorage.getItem('deprem_last_snapshot');
+            if (cached) {
+              const parsed = JSON.parse(cached);
+              if (parsed.items && parsed.items.length > 0) {
+                setItems(parsed.items);
+                setPageInfo(parsed.page);
+                setFreshness(parsed.freshness);
+              }
+            }
+          } catch {
+            // ignore
+          }
         }
       });
 
@@ -184,7 +219,9 @@ export function App() {
   }, [filters]);
 
   const refreshData = useCallback(async () => {
+    abortControllerRef.current?.abort();
     const controller = new AbortController();
+    abortControllerRef.current = controller;
     const requestId = ++activeRequestIdRef.current;
     setLoading(true);
     setError(null);
@@ -201,6 +238,17 @@ export function App() {
         setItems(loadedItems);
         setPageInfo(response.page);
         setFreshness(response.freshness);
+
+        try {
+          localStorage.setItem('deprem_last_snapshot', JSON.stringify({
+            items: loadedItems.slice(0, 50),
+            page: response.page,
+            freshness: response.freshness,
+            timestamp: Date.now()
+          }));
+        } catch {
+          // ignore
+        }
       }
     } catch (err: any) {
       if (err.name === 'AbortError') return;
@@ -242,23 +290,39 @@ export function App() {
     if (nextPage >= pageInfo.totalPages) return;
 
     setLoadingMore(true);
+    const requestId = activeRequestIdRef.current;
     try {
       const response = await fetchEarthquakes(filters, nextPage, currentTimeWindowRef.current);
-      setItems(prev => [...prev, ...response.items]);
-      setPageInfo(response.page);
-      setFreshness(response.freshness);
+      if (requestId === activeRequestIdRef.current) {
+        setItems(prev => [...prev, ...response.items]);
+        setPageInfo(response.page);
+        setFreshness(response.freshness);
+      }
     } catch (err: any) {
       console.error('Daha fazla veri yüklenemedi:', err);
     } finally {
-      setLoadingMore(false);
+      if (requestId === activeRequestIdRef.current) {
+        setLoadingMore(false);
+      }
     }
   };
 
   const handleFilterChange = (updated: Partial<FilterParams>) => {
-    if (updated.place !== undefined && updated.place.trim() === '') {
-      setActiveProvince(null);
-      if (typeof window !== 'undefined' && window.location.pathname.startsWith('/son-depremler')) {
-        window.history.pushState({}, '', '/');
+    if (updated.place !== undefined) {
+      if (updated.place.trim() === '') {
+        setActiveProvince(null);
+        if (typeof window !== 'undefined' && window.location.pathname.startsWith('/son-depremler')) {
+          window.history.pushState({}, '', '/');
+        }
+      } else {
+        const matched = findProvinceByName(updated.place);
+        setActiveProvince(matched || null);
+        if (matched && typeof window !== 'undefined') {
+          const newPath = `/son-depremler/${matched.slug}`;
+          if (window.location.pathname !== newPath) {
+            window.history.pushState({}, '', newPath);
+          }
+        }
       }
     }
     setFilters(prev => ({ ...prev, ...updated }));
@@ -389,6 +453,8 @@ export function App() {
           <EarthquakeMap
             items={items}
             selectedItem={selectedItem}
+            activeProvince={activeProvince}
+            isVisible={activeTab === 'map'}
             onSelect={handleSelectItem}
             onOpenDetail={handleOpenDetail}
           />

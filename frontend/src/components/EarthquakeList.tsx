@@ -155,8 +155,18 @@ export const EarthquakeList: React.FC<EarthquakeListProps> = ({
             <article
               key={item.id}
               className={`earthquake-card ${isSelected ? 'selected' : ''}`}
-              onClick={() => onSelect(item)}
+              tabIndex={0}
+              role="button"
               aria-current={isSelected ? 'true' : undefined}
+              aria-label={`${loc.displayTitle}, Büyüklük ${magVal !== null && magVal !== undefined ? magVal.toFixed(1) : 'Raporlanmadı'}, Derinlik ${item.depthKm !== null ? `${item.depthKm} km` : 'Raporlanmadı'}`}
+              onClick={() => onSelect(item)}
+              onKeyDown={(e) => {
+                if (e.target !== e.currentTarget) return;
+                if (e.key === 'Enter' || e.key === ' ') {
+                  e.preventDefault();
+                  onSelect(item);
+                }
+              }}
             >
               <div className="card-top">
                 <div className={`mag-badge ${getMagClass(magVal)}`}>
@@ -184,13 +194,13 @@ export const EarthquakeList: React.FC<EarthquakeListProps> = ({
                 </div>
               </div>
 
-              <div className="card-details">
+              <div className="card-specs card-details">
                 <span className={`source-tag ${item.source === 'KOERI' ? 'tag-koeri' : 'tag-afad'}`}>
                   {item.source === 'KOERI' ? 'Kandilli' : 'AFAD'}
                 </span>
                 <span className="detail-dot">•</span>
                 <span className="detail-item">
-                  Derinlik: <strong>{item.depthKm !== null ? `${item.depthKm} km` : 'Bilinmiyor'}</strong>
+                  Derinlik: <strong>{item.depthKm !== null ? `${item.depthKm} km` : 'Raporlanmadı'}</strong>
                 </span>
                 {item.solutionQuality && (
                   <>
@@ -232,7 +242,7 @@ export const EarthquakeList: React.FC<EarthquakeListProps> = ({
         })}
 
         {hasMore && (
-          <div className="list-load-more">
+          <div className="list-load-more-container list-load-more">
             <button
               type="button"
               className="btn-load-more"

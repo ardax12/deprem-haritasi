@@ -41,11 +41,18 @@ services:
       AFAD_SYNC_ENABLED: ${AFAD_SYNC_ENABLED:-true}
       AFAD_SYNC_INTERVAL_MS: ${AFAD_SYNC_INTERVAL_MS:-300000}
       AFAD_SYNC_WINDOW_HOURS: ${AFAD_SYNC_WINDOW_HOURS:-24}
+      KOERI_SYNC_ENABLED: ${KOERI_SYNC_ENABLED:-true}
+      KOERI_SYNC_INTERVAL_MS: ${KOERI_SYNC_INTERVAL_MS:-180000}
+      KOERI_BASE_URL: ${KOERI_BASE_URL:-https://www.koeri.boun.edu.tr/scripts/lst0.asp}
+      APP_SITE_BASE_URL: ${APP_SITE_BASE_URL:-https://depremizleme.com}
       APP_RETENTION_ENABLED: ${APP_RETENTION_ENABLED:-true}
       APP_RETENTION_DAYS: ${APP_RETENTION_DAYS:-30}
       APP_ADMIN_API_KEY: ${APP_ADMIN_API_KEY:-}
+      APP_ARCHIVE_STORAGE_PATH: /app/archive
       CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS:-https://localhost}
       JAVA_OPTS: "-XX:+UseContainerSupport -XX:MaxRAMPercentage=75.0"
+    volumes:
+      - archive_data:/app/archive
     expose:
       - "8080"
     networks:
@@ -75,6 +82,8 @@ volumes:
   pgdata:
     driver: local
   certbot_challenge:
+    driver: local
+  archive_data:
     driver: local
 
 networks:

@@ -12,6 +12,7 @@ import java.time.Duration;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 @Service
 public class AfadBackfillService {
@@ -23,6 +24,7 @@ public class AfadBackfillService {
     private final int chunkHours;
     private final long delayMs;
     private final boolean backfillEnabled;
+    private final AtomicBoolean isBackfilling = new AtomicBoolean(false);
 
     public AfadBackfillService(AfadApiClient apiClient,
                                IngestionService ingestionService,
@@ -44,7 +46,12 @@ public class AfadBackfillService {
             throw new IllegalArgumentException("Parameter 'start' must be strictly before 'end'");
         }
 
-        log.info("Starting AFAD historical backfill from {} to {} in {}-hour chunks", start, end, chunkHours);
+        if (!isBackfilling.compareAndSet(false, true)) {
+            throw new IllegalStateException("AFAD backfill operation is already in progress");
+        }
+
+        try {
+            log.info("Starting AFAD historical backfill from {} to {} in {}-hour chunks", start, end, chunkHours);
 
         int totalFetched = 0;
         int inserted = 0;
@@ -113,6 +120,9 @@ public class AfadBackfillService {
                 success,
                 message
         );
+        } finally {
+            isBackfilling.set(false);
+        }
     }
 
     /**
@@ -121,6 +131,10 @@ public class AfadBackfillService {
     @Scheduled(cron = "${afad.backfill.cron:0 0 4 * * *}")
     public void scheduledDailyBackfill() {
         if (!backfillEnabled) {
+            return;
+        }
+        if (isBackfilling.get()) {
+            log.warn("Backfill is already running, skipping scheduled daily backfill.");
             return;
         }
         // Safely scan the last 30 to 31 days to ensure historical consistency

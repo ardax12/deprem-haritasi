@@ -24,7 +24,7 @@ def main():
     start_date = now - timedelta(days=30)
 
     print(f"\n[1/3] Son 30 günün AFAD kataloğu sorgulanıyor...")
-    df = download_historical_catalog(start_date, now, chunk_days=10)
+    df = download_historical_catalog(start_date, now, chunk_days=2)
 
     if df.empty:
         print("[HATA] Katalog verisi alınamadı.")
