@@ -1,12 +1,17 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback, useRef, lazy, Suspense } from 'react';
 import { Header } from './components/Header';
 import { FilterBar } from './components/FilterBar';
 import { EarthquakeMap } from './components/EarthquakeMap';
 import { EarthquakeList } from './components/EarthquakeList';
-import { EarthquakeDetailModal } from './components/EarthquakeDetailModal';
-import { InfoModal } from './components/InfoModal';
 import { IconMap, IconList, IconWifiOff, IconAlertTriangle } from './components/Icons';
 import { AiSummarySnippet } from './components/AiSummarySnippet';
+
+const EarthquakeDetailModal = lazy(() =>
+  import('./components/EarthquakeDetailModal').then((m) => ({ default: m.EarthquakeDetailModal }))
+);
+const InfoModal = lazy(() =>
+  import('./components/InfoModal').then((m) => ({ default: m.InfoModal }))
+);
 import { findProvinceBySlug, findProvinceByName, type ProvinceData } from './data/provinces';
 import { useSeo } from './hooks/useSeo';
 import type { EarthquakeItem, FilterParams, Freshness, PageInfo, EarthquakeDetail } from './types/earthquake';
@@ -489,15 +494,23 @@ export function App() {
         </div>
       </main>
 
-      <EarthquakeDetailModal
-        item={modalItem}
-        onClose={handleCloseModal}
-      />
+      {modalItem && (
+        <Suspense fallback={null}>
+          <EarthquakeDetailModal
+            item={modalItem}
+            onClose={handleCloseModal}
+          />
+        </Suspense>
+      )}
 
-      <InfoModal
-        isOpen={infoModalOpen}
-        onClose={() => setInfoModalOpen(false)}
-      />
+      {infoModalOpen && (
+        <Suspense fallback={null}>
+          <InfoModal
+            isOpen={infoModalOpen}
+            onClose={() => setInfoModalOpen(false)}
+          />
+        </Suspense>
+      )}
     </div>
   );
 }

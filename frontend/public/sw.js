@@ -93,7 +93,7 @@ self.addEventListener('fetch', (event) => {
           });
         }
         return networkResponse;
-      } catch (_err) {
+      } catch {
         // Return a proper offline Response instead of null
         return new Response('Network offline and asset not cached', {
           status: 503,

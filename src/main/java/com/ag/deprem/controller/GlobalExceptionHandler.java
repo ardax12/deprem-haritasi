@@ -29,6 +29,15 @@ public class GlobalExceptionHandler {
         return problem;
     }
 
+    @ExceptionHandler(IllegalStateException.class)
+    public ProblemDetail handleIllegalState(IllegalStateException e) {
+        log.warn("Illegal state conflict: {}", e.getMessage());
+        ProblemDetail problem = ProblemDetail.forStatusAndDetail(HttpStatus.CONFLICT, e.getMessage());
+        problem.setTitle("İşlem Reddedildi");
+        problem.setType(URI.create("urn:deprem:conflict"));
+        return problem;
+    }
+
     @ExceptionHandler(MethodArgumentTypeMismatchException.class)
     public ProblemDetail handleTypeMismatch(MethodArgumentTypeMismatchException e) {
         String detail = String.format("'%s' parametresi için geçersiz değer: '%s'", e.getName(), e.getValue());

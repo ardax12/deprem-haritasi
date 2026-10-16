@@ -1,0 +1,1193 @@
+{
+  "type": "FeatureCollection",
+  "name": "turkey_active_faults_mta",
+  "features": [
+    {
+      "type": "Feature",
+      "id": "kaf_saros_ganos",
+      "properties": {
+        "name": "Kuzey Anadolu Fay? (Ganos Segmenti)",
+        "type": "STRIKE_SLIP",
+        "zone": "Kuzey Anadolu Fay Zonu",
+        "certainty": "CERTAIN"
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            26.15,
+            40.5
+          ],
+          [
+            26.4,
+            40.57
+          ],
+          [
+            26.7,
+            40.67
+          ],
+          [
+            27.0,
+            40.75
+          ],
+          [
+            27.25,
+            40.82
+          ],
+          [
+            27.45,
+            40.87
+          ],
+          [
+            27.65,
+            40.9
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "kaf_marmara_orta",
+      "properties": {
+        "name": "Kuzey Anadolu Fay? (Orta Marmara / ??narc?k ?ukuru Segmenti)",
+        "type": "STRIKE_SLIP",
+        "zone": "Kuzey Anadolu Fay Zonu",
+        "certainty": "CERTAIN"
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            27.65,
+            40.9
+          ],
+          [
+            28.0,
+            40.87
+          ],
+          [
+            28.35,
+            40.83
+          ],
+          [
+            28.7,
+            40.82
+          ],
+          [
+            29.0,
+            40.78
+          ],
+          [
+            29.3,
+            40.73
+          ],
+          [
+            29.5,
+            40.71
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "kaf_izmit_sapanca",
+      "properties": {
+        "name": "Kuzey Anadolu Fay? (?zmit - Sapanca - Akyaz? Segmenti)",
+        "type": "STRIKE_SLIP",
+        "zone": "Kuzey Anadolu Fay Zonu",
+        "certainty": "CERTAIN"
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            29.5,
+            40.71
+          ],
+          [
+            29.8,
+            40.72
+          ],
+          [
+            30.0,
+            40.72
+          ],
+          [
+            30.25,
+            40.7
+          ],
+          [
+            30.45,
+            40.69
+          ],
+          [
+            30.7,
+            40.68
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "kaf_duzce_bolu",
+      "properties": {
+        "name": "Kuzey Anadolu Fay? (D?zce - Bolu Segmenti)",
+        "type": "STRIKE_SLIP",
+        "zone": "Kuzey Anadolu Fay Zonu",
+        "certainty": "CERTAIN"
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            30.7,
+            40.68
+          ],
+          [
+            30.95,
+            40.72
+          ],
+          [
+            31.18,
+            40.75
+          ],
+          [
+            31.4,
+            40.76
+          ],
+          [
+            31.6,
+            40.74
+          ],
+          [
+            31.85,
+            40.75
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "kaf_gerede_ilgaz",
+      "properties": {
+        "name": "Kuzey Anadolu Fay? (Gerede - ?erke? - Ilgaz Segmenti)",
+        "type": "STRIKE_SLIP",
+        "zone": "Kuzey Anadolu Fay Zonu",
+        "certainty": "CERTAIN"
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            31.85,
+            40.75
+          ],
+          [
+            32.2,
+            40.8
+          ],
+          [
+            32.55,
+            40.83
+          ],
+          [
+            32.88,
+            40.85
+          ],
+          [
+            33.2,
+            40.88
+          ],
+          [
+            33.6,
+            40.92
+          ],
+          [
+            33.9,
+            40.98
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "kaf_tosya_osmancik",
+      "properties": {
+        "name": "Kuzey Anadolu Fay? (Tosya - Karg? - Osmanc?k Segmenti)",
+        "type": "STRIKE_SLIP",
+        "zone": "Kuzey Anadolu Fay Zonu",
+        "certainty": "CERTAIN"
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            33.9,
+            40.98
+          ],
+          [
+            34.2,
+            41.02
+          ],
+          [
+            34.5,
+            41.08
+          ],
+          [
+            34.8,
+            41.05
+          ],
+          [
+            35.1,
+            41.0
+          ],
+          [
+            35.4,
+            40.95
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "kaf_ladik_erbaa",
+      "properties": {
+        "name": "Kuzey Anadolu Fay? (Ladik - Ta?ova - Erbaa Segmenti)",
+        "type": "STRIKE_SLIP",
+        "zone": "Kuzey Anadolu Fay Zonu",
+        "certainty": "CERTAIN"
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            35.4,
+            40.95
+          ],
+          [
+            35.8,
+            40.91
+          ],
+          [
+            36.2,
+            40.85
+          ],
+          [
+            36.55,
+            40.75
+          ],
+          [
+            36.9,
+            40.67
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "kaf_niksar_susehri",
+      "properties": {
+        "name": "Kuzey Anadolu Fay? (Niksar - Re?adiye - Su?ehri Segmenti)",
+        "type": "STRIKE_SLIP",
+        "zone": "Kuzey Anadolu Fay Zonu",
+        "certainty": "CERTAIN"
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            36.9,
+            40.67
+          ],
+          [
+            37.3,
+            40.5
+          ],
+          [
+            37.7,
+            40.35
+          ],
+          [
+            38.1,
+            40.2
+          ],
+          [
+            38.45,
+            40.12
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "kaf_refahiye_erzincan",
+      "properties": {
+        "name": "Kuzey Anadolu Fay? (Refahiye - Erzincan Havzas? Segmenti)",
+        "type": "STRIKE_SLIP",
+        "zone": "Kuzey Anadolu Fay Zonu",
+        "certainty": "CERTAIN"
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            38.45,
+            40.12
+          ],
+          [
+            38.85,
+            39.95
+          ],
+          [
+            39.15,
+            39.8
+          ],
+          [
+            39.5,
+            39.72
+          ],
+          [
+            39.8,
+            39.68
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "kaf_yedisu_karliova",
+      "properties": {
+        "name": "Kuzey Anadolu Fay? (Yedisu - Karl?ova Segmenti)",
+        "type": "STRIKE_SLIP",
+        "zone": "Kuzey Anadolu Fay Zonu",
+        "certainty": "CERTAIN"
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            39.8,
+            39.68
+          ],
+          [
+            40.1,
+            39.55
+          ],
+          [
+            40.4,
+            39.45
+          ],
+          [
+            40.7,
+            39.38
+          ],
+          [
+            41.02,
+            39.3
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "kaf_guney_iznik_gemlik",
+      "properties": {
+        "name": "KAF G?ney Kol (Geyve - ?znik - Gemlik Segmenti)",
+        "type": "STRIKE_SLIP",
+        "zone": "Kuzey Anadolu Fay Zonu (G?ney Kol)",
+        "certainty": "CERTAIN"
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            30.3,
+            40.5
+          ],
+          [
+            29.9,
+            40.45
+          ],
+          [
+            29.6,
+            40.43
+          ],
+          [
+            29.25,
+            40.42
+          ],
+          [
+            29.0,
+            40.4
+          ],
+          [
+            28.75,
+            40.35
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "kaf_guney_bursa_manyas",
+      "properties": {
+        "name": "KAF G?ney Kol (Bursa - Uluabat - Manyas Segmenti)",
+        "type": "STRIKE_SLIP",
+        "zone": "Kuzey Anadolu Fay Zonu (G?ney Kol)",
+        "certainty": "CERTAIN"
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            29.2,
+            40.25
+          ],
+          [
+            28.95,
+            40.2
+          ],
+          [
+            28.6,
+            40.18
+          ],
+          [
+            28.25,
+            40.15
+          ],
+          [
+            27.9,
+            40.1
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "kaf_guney_yenice_gonen",
+      "properties": {
+        "name": "Yenice - G?nen Fay?",
+        "type": "STRIKE_SLIP",
+        "zone": "Biga Yar?madas?",
+        "certainty": "CERTAIN"
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            27.8,
+            40.15
+          ],
+          [
+            27.5,
+            40.05
+          ],
+          [
+            27.25,
+            39.95
+          ],
+          [
+            27.0,
+            39.85
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "daf_karliova_bingol",
+      "properties": {
+        "name": "Do?u Anadolu Fay? (Karl?ova - G?yn?k - Bing?l Segmenti)",
+        "type": "STRIKE_SLIP",
+        "zone": "Do?u Anadolu Fay Zonu",
+        "certainty": "CERTAIN"
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            41.02,
+            39.3
+          ],
+          [
+            40.8,
+            39.15
+          ],
+          [
+            40.6,
+            39.0
+          ],
+          [
+            40.45,
+            38.88
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "daf_palu_hazar",
+      "properties": {
+        "name": "Do?u Anadolu Fay? (Palu - Hazar G?l? Segmenti)",
+        "type": "STRIKE_SLIP",
+        "zone": "Do?u Anadolu Fay Zonu",
+        "certainty": "CERTAIN"
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            40.45,
+            38.88
+          ],
+          [
+            40.15,
+            38.7
+          ],
+          [
+            39.85,
+            38.52
+          ],
+          [
+            39.5,
+            38.45
+          ],
+          [
+            39.25,
+            38.35
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "daf_hazar_sincik",
+      "properties": {
+        "name": "Do?u Anadolu Fay? (Hazar - Sivrice - Do?anyol Segmenti)",
+        "type": "STRIKE_SLIP",
+        "zone": "Do?u Anadolu Fay Zonu",
+        "certainty": "CERTAIN"
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            39.25,
+            38.35
+          ],
+          [
+            39.0,
+            38.25
+          ],
+          [
+            38.75,
+            38.15
+          ],
+          [
+            38.5,
+            38.05
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "daf_celikhan_erkenek",
+      "properties": {
+        "name": "Do?u Anadolu Fay? (?elikhan - Erkenek Segmenti)",
+        "type": "STRIKE_SLIP",
+        "zone": "Do?u Anadolu Fay Zonu",
+        "certainty": "CERTAIN"
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            38.5,
+            38.05
+          ],
+          [
+            38.25,
+            37.95
+          ],
+          [
+            38.0,
+            37.85
+          ],
+          [
+            37.75,
+            37.75
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "daf_pazarcik_golbasi",
+      "properties": {
+        "name": "Do?u Anadolu Fay? (G?lba?? - Pazarc?k Segmenti)",
+        "type": "STRIKE_SLIP",
+        "zone": "Do?u Anadolu Fay Zonu",
+        "certainty": "CERTAIN"
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            37.75,
+            37.75
+          ],
+          [
+            37.5,
+            37.6
+          ],
+          [
+            37.25,
+            37.45
+          ],
+          [
+            37.05,
+            37.3
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "daf_turkoglu_antakya",
+      "properties": {
+        "name": "Do?u Anadolu Fay? (T?rko?lu - K?r?khan - Antakya / Amanos Segmenti)",
+        "type": "STRIKE_SLIP",
+        "zone": "Do?u Anadolu Fay Zonu",
+        "certainty": "CERTAIN"
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            37.05,
+            37.3
+          ],
+          [
+            36.85,
+            37.05
+          ],
+          [
+            36.65,
+            36.8
+          ],
+          [
+            36.45,
+            36.5
+          ],
+          [
+            36.3,
+            36.2
+          ],
+          [
+            36.15,
+            35.95
+          ],
+          [
+            35.95,
+            35.75
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "cardak_fayi",
+      "properties": {
+        "name": "?ardak Fay? (Elbistan - G?ksun Segmenti)",
+        "type": "STRIKE_SLIP",
+        "zone": "S?rg? - ?ardak Fay Zonu",
+        "certainty": "CERTAIN"
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            37.8,
+            37.95
+          ],
+          [
+            37.5,
+            38.02
+          ],
+          [
+            37.15,
+            38.05
+          ],
+          [
+            36.8,
+            38.03
+          ],
+          [
+            36.45,
+            38.0
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "malatya_ovacik_fayi",
+      "properties": {
+        "name": "Malatya - Ovac?k Fay Zonu",
+        "type": "STRIKE_SLIP",
+        "zone": "Orta Do?u Anadolu",
+        "certainty": "CERTAIN"
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            39.2,
+            39.35
+          ],
+          [
+            38.9,
+            39.1
+          ],
+          [
+            38.6,
+            38.8
+          ],
+          [
+            38.3,
+            38.5
+          ],
+          [
+            38.05,
+            38.2
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "gediz_grabeni",
+      "properties": {
+        "name": "Gediz Grabeni Fay Zonu (Manisa - Salihli - Ala?ehir)",
+        "type": "NORMAL",
+        "zone": "Bat? Anadolu Fay Sistemi",
+        "certainty": "CERTAIN"
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            27.3,
+            38.65
+          ],
+          [
+            27.65,
+            38.55
+          ],
+          [
+            28.05,
+            38.48
+          ],
+          [
+            28.45,
+            38.4
+          ],
+          [
+            28.85,
+            38.32
+          ],
+          [
+            29.1,
+            38.25
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "buyuk_menderes_grabeni",
+      "properties": {
+        "name": "B?y?k Menderes Grabeni Fay? (S?ke - Ayd?n - Nazilli - Pamukkale)",
+        "type": "NORMAL",
+        "zone": "Bat? Anadolu Fay Sistemi",
+        "certainty": "CERTAIN"
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            27.35,
+            37.8
+          ],
+          [
+            27.7,
+            37.85
+          ],
+          [
+            28.05,
+            37.88
+          ],
+          [
+            28.35,
+            37.92
+          ],
+          [
+            28.75,
+            37.92
+          ],
+          [
+            29.1,
+            37.9
+          ],
+          [
+            29.35,
+            37.82
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "kucuk_menderes_fayi",
+      "properties": {
+        "name": "K???k Menderes Fay Zonu (Torbal? - Tire - ?demi?)",
+        "type": "NORMAL",
+        "zone": "Bat? Anadolu Fay Sistemi",
+        "certainty": "CERTAIN"
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            27.35,
+            38.15
+          ],
+          [
+            27.65,
+            38.12
+          ],
+          [
+            27.95,
+            38.18
+          ],
+          [
+            28.3,
+            38.2
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "simav_fay_zonu",
+      "properties": {
+        "name": "Simav Fay Zonu (Bal?kesir - S?nd?rg? - Simav)",
+        "type": "NORMAL",
+        "zone": "Bat? Anadolu Fay Sistemi",
+        "certainty": "CERTAIN"
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            27.9,
+            39.4
+          ],
+          [
+            28.25,
+            39.25
+          ],
+          [
+            28.65,
+            39.15
+          ],
+          [
+            29.0,
+            39.1
+          ],
+          [
+            29.35,
+            39.05
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "bakircay_grabeni",
+      "properties": {
+        "name": "Bak?r?ay Grabeni Fay? (Dikili - Bergama - Soma)",
+        "type": "NORMAL",
+        "zone": "Bat? Anadolu Fay Sistemi",
+        "certainty": "CERTAIN"
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            26.9,
+            39.05
+          ],
+          [
+            27.15,
+            39.1
+          ],
+          [
+            27.45,
+            39.15
+          ],
+          [
+            27.75,
+            39.2
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "edremit_korfezi_fayi",
+      "properties": {
+        "name": "Edremit K?rfezi Fay Zonu",
+        "type": "NORMAL",
+        "zone": "Kuzey Ege",
+        "certainty": "CERTAIN"
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            26.4,
+            39.5
+          ],
+          [
+            26.7,
+            39.55
+          ],
+          [
+            27.0,
+            39.58
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "gokova_fay_zonu",
+      "properties": {
+        "name": "G?kova Grabeni Fay Zonu (Kos - Dat?a - Mu?la)",
+        "type": "NORMAL",
+        "zone": "G?neybat? Anadolu",
+        "certainty": "CERTAIN"
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            27.1,
+            36.95
+          ],
+          [
+            27.5,
+            36.98
+          ],
+          [
+            27.9,
+            37.02
+          ],
+          [
+            28.3,
+            37.05
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "tuz_golu_fay_zonu",
+      "properties": {
+        "name": "Tuz G?l? Fay Zonu (Cihanbeyli - ?erefliko?hisar - Aksaray)",
+        "type": "STRIKE_SLIP",
+        "zone": "?? Anadolu Fay Ku?a??",
+        "certainty": "CERTAIN"
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            32.9,
+            39.3
+          ],
+          [
+            33.2,
+            39.05
+          ],
+          [
+            33.5,
+            38.75
+          ],
+          [
+            33.8,
+            38.45
+          ],
+          [
+            34.1,
+            38.15
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "ecemis_fay_zonu",
+      "properties": {
+        "name": "Ecemi? Fay? (Kayseri - Develi - ?amard? - Pozant?)",
+        "type": "STRIKE_SLIP",
+        "zone": "Orta Toroslar",
+        "certainty": "CERTAIN"
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            35.4,
+            38.7
+          ],
+          [
+            35.2,
+            38.4
+          ],
+          [
+            35.05,
+            38.1
+          ],
+          [
+            34.9,
+            37.75
+          ],
+          [
+            34.8,
+            37.4
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "eskisehir_fay_zonu",
+      "properties": {
+        "name": "Eski?ehir Fay Zonu (?n?n? - Eski?ehir - Sivrihisar)",
+        "type": "STRIKE_SLIP",
+        "zone": "?? Bat? Anadolu",
+        "certainty": "CERTAIN"
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            29.9,
+            39.85
+          ],
+          [
+            30.25,
+            39.8
+          ],
+          [
+            30.6,
+            39.75
+          ],
+          [
+            31.0,
+            39.65
+          ],
+          [
+            31.4,
+            39.5
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "fethiye_burdur_zonu",
+      "properties": {
+        "name": "Fethiye - Burdur Fay Zonu (Fethiye - ?ameli - G?lhisar - Burdur)",
+        "type": "STRIKE_SLIP",
+        "zone": "G?ller B?lgesi / Teke Yar?madas?",
+        "certainty": "CERTAIN"
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            29.15,
+            36.6
+          ],
+          [
+            29.35,
+            36.85
+          ],
+          [
+            29.6,
+            37.15
+          ],
+          [
+            29.9,
+            37.45
+          ],
+          [
+            30.2,
+            37.75
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "bitlis_zagros_bindirme",
+      "properties": {
+        "name": "Bitlis - Zagros Bindirme Ku?a?? (Ad?yaman - Ergani - Siirt - ?emdinli)",
+        "type": "THRUST",
+        "zone": "G?neydo?u Anadolu S?k??ma Ku?a??",
+        "certainty": "CERTAIN"
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            38.2,
+            37.9
+          ],
+          [
+            38.9,
+            38.05
+          ],
+          [
+            39.7,
+            38.25
+          ],
+          [
+            40.5,
+            38.35
+          ],
+          [
+            41.5,
+            38.25
+          ],
+          [
+            42.5,
+            37.95
+          ],
+          [
+            43.5,
+            37.55
+          ],
+          [
+            44.5,
+            37.2
+          ]
+        ]
+      }
+    }
+  ]
+}

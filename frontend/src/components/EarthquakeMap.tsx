@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useCallback } from 'react';
+import React, { useEffect, useRef, useCallback, useState } from 'react';
 import { Map, Popup, NavigationControl, ScaleControl, AttributionControl, setWorkerUrl } from 'maplibre-gl';
 import type { StyleSpecification } from 'maplibre-gl';
 import maplibreWorkerUrl from 'maplibre-gl/dist/maplibre-gl-worker.mjs?url';
@@ -8,6 +8,7 @@ import 'maplibre-gl/dist/maplibre-gl.css';
 import type { EarthquakeItem } from '../types/earthquake';
 import type { ProvinceData } from '../data/provinces';
 import turkishDarkStyleJson from '../assets/turkish-dark-style.json';
+import turkeyFaultsJson from '../assets/turkey-faults.json';
 import { parseItemLocation } from '../utils/locationHelper';
 
 setWorkerUrl(maplibreWorkerUrl);
@@ -33,18 +34,79 @@ export const EarthquakeMap: React.FC<EarthquakeMapProps> = ({
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<Map | null>(null);
   const popupRef = useRef<Popup | null>(null);
+  const faultPopupRef = useRef<Popup | null>(null);
+
+  const [showFaults, setShowFaults] = useState<boolean>(() => {
+    if (typeof window !== 'undefined') {
+      return localStorage.getItem('deprem_layer_faults') === 'true';
+    }
+    return false; // disabled by default per user request
+  });
+  const showFaultsRef = useRef<boolean>(showFaults);
+  useEffect(() => {
+    showFaultsRef.current = showFaults;
+  }, [showFaults]);
+
+  const toggleFaults = () => {
+    const nextVal = !showFaults;
+    setShowFaults(nextVal);
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('deprem_layer_faults', String(nextVal));
+    }
+  };
 
   const selectedItemRef = useRef<EarthquakeItem | null>(selectedItem);
-  selectedItemRef.current = selectedItem;
-
   const itemsRef = useRef<EarthquakeItem[]>(items);
-  itemsRef.current = items;
-
   const onSelectRef = useRef(onSelect);
-  onSelectRef.current = onSelect;
-
   const onOpenDetailRef = useRef(onOpenDetail);
-  onOpenDetailRef.current = onOpenDetail;
+
+  useEffect(() => {
+    selectedItemRef.current = selectedItem;
+    itemsRef.current = items;
+    onSelectRef.current = onSelect;
+    onOpenDetailRef.current = onOpenDetail;
+  }, [selectedItem, items, onSelect, onOpenDetail]);
+
+  const displayFaultPopup = useCallback((props: any, lngLat: [number, number], mapInstance: Map) => {
+    if (faultPopupRef.current) {
+      faultPopupRef.current.remove();
+    }
+
+    const typeDesc = props.type === 'STRIKE_SLIP'
+      ? 'Doğrultu Atımlı Fay (Yanal Öteleme)'
+      : props.type === 'NORMAL'
+      ? 'Normal / Açılma Fayı (Graben Çöküntüsü)'
+      : props.type === 'THRUST'
+      ? 'Ters / Bindirme Fayı (Sıkışma Kuşağı)'
+      : 'Aktif Fay';
+
+    const typeColor = props.type === 'STRIKE_SLIP' ? '#ef4444' : props.type === 'NORMAL' ? '#f59e0b' : '#38bdf8';
+
+    const popupContent = document.createElement('div');
+    popupContent.className = 'fault-popup-card';
+    popupContent.innerHTML = `
+      <div class="fault-popup-header">
+        <span class="fault-kinematics-pill" style="background-color: ${typeColor}22; color: ${typeColor}; border: 1px solid ${typeColor}55">
+          ${props.type === 'STRIKE_SLIP' ? 'Doğrultu Atımlı' : props.type === 'NORMAL' ? 'Normal / Graben' : 'Bindirme / Ters'}
+        </span>
+        <div class="fault-badge-title">${props.name || 'Diri Fay Segmenti'}</div>
+        <div class="fault-badge-zone">${props.zone || 'Türkiye Diri Fay Kuşağı'}</div>
+      </div>
+      <div class="fault-popup-row">
+        <span class="fault-row-label">Kinematik Tip:</span>
+        <strong>${typeDesc}</strong>
+      </div>
+      <div class="fault-popup-row">
+        <span class="fault-row-label">Kaynak:</span>
+        <span class="fault-source-mta">MTA 1:1.250.000 Diri Fay Veri Seti</span>
+      </div>
+    `;
+
+    faultPopupRef.current = new Popup({ offset: 10, closeButton: true })
+      .setLngLat(lngLat)
+      .setDOMContent(popupContent)
+      .addTo(mapInstance);
+  }, []);
 
   const displayPopup = useCallback((item: EarthquakeItem, mapInstance: Map) => {
     mapInstance.flyTo({
@@ -357,6 +419,121 @@ export const EarthquakeMap: React.FC<EarthquakeMapProps> = ({
     }
   }, [getGeoJSONCollection]);
 
+  // Ensure MTA active fault lines layers exist on the map
+  const ensureFaultLayers = useCallback((map: Map, isVisible: boolean) => {
+    if (!map.getSource('mta-faults')) {
+      map.addSource('mta-faults', {
+        type: 'geojson',
+        data: turkeyFaultsJson as any
+      });
+    }
+
+    const visibility = isVisible ? 'visible' : 'none';
+
+    if (!map.getLayer('mta-faults-casing')) {
+      map.addLayer({
+        id: 'mta-faults-casing',
+        type: 'line',
+        source: 'mta-faults',
+        layout: {
+          'visibility': visibility,
+          'line-cap': 'round',
+          'line-join': 'round'
+        },
+        paint: {
+          'line-color': '#090d16',
+          'line-width': [
+            'interpolate', ['linear'], ['zoom'],
+            4, 2.5,
+            7, 3.8,
+            10, 5.0
+          ],
+          'line-opacity': 0.85
+        }
+      }, 'earthquakes-glow');
+    } else {
+      map.setLayoutProperty('mta-faults-casing', 'visibility', visibility);
+    }
+
+    if (!map.getLayer('mta-faults-line')) {
+      map.addLayer({
+        id: 'mta-faults-line',
+        type: 'line',
+        source: 'mta-faults',
+        layout: {
+          'visibility': visibility,
+          'line-cap': 'round',
+          'line-join': 'round'
+        },
+        paint: {
+          'line-color': [
+            'match', ['get', 'type'],
+            'STRIKE_SLIP', '#ef4444',
+            'NORMAL', '#f59e0b',
+            'THRUST', '#38bdf8',
+            '#ef4444'
+          ],
+          'line-width': [
+            'interpolate', ['linear'], ['zoom'],
+            4, 1.2,
+            7, 2.2,
+            10, 3.5
+          ],
+          'line-opacity': 0.95
+        }
+      }, 'earthquakes-glow');
+    } else {
+      map.setLayoutProperty('mta-faults-line', 'visibility', visibility);
+    }
+
+    if (!map.getLayer('mta-faults-label')) {
+      map.addLayer({
+        id: 'mta-faults-label',
+        type: 'symbol',
+        source: 'mta-faults',
+        minzoom: 7.2,
+        layout: {
+          'visibility': visibility,
+          'text-field': ['get', 'name'],
+          'text-font': ['Noto Sans Regular'],
+          'text-size': [
+            'interpolate', ['linear'], ['zoom'],
+            7.2, 9,
+            10, 11
+          ],
+          'symbol-placement': 'line',
+          'text-anchor': 'center',
+          'text-max-angle': 30,
+          'text-offset': [0, 0.6]
+        },
+        paint: {
+          'text-color': '#cbd5e1',
+          'text-halo-color': '#090d16',
+          'text-halo-width': 2.0
+        }
+      }, 'earthquakes-glow');
+    } else {
+      map.setLayoutProperty('mta-faults-label', 'visibility', visibility);
+    }
+
+    if (!map.getLayer('mta-faults-hitbox')) {
+      map.addLayer({
+        id: 'mta-faults-hitbox',
+        type: 'line',
+        source: 'mta-faults',
+        layout: {
+          'visibility': visibility
+        },
+        paint: {
+          'line-width': 18,
+          'line-opacity': 0.0
+        }
+      });
+    } else {
+      map.setLayoutProperty('mta-faults-hitbox', 'visibility', visibility);
+    }
+  }, []);
+
   // Initialize Map
   useEffect(() => {
     if (!mapContainerRef.current) return;
@@ -377,12 +554,13 @@ export const EarthquakeMap: React.FC<EarthquakeMapProps> = ({
     map.addControl(new ScaleControl({ unit: 'metric' }), 'bottom-left');
     map.addControl(new AttributionControl({
       compact: false,
-      customAttribution: '© <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a> | <a href="https://openfreemap.org" target="_blank" rel="noopener">OpenFreeMap</a>'
+      customAttribution: '© <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a> | <a href="https://openfreemap.org" target="_blank" rel="noopener">OpenFreeMap</a> | MTA Diri Faylar'
     }), 'bottom-right');
 
     const handleLoaded = () => {
       applyTurkishLabels(map);
       ensureEarthquakeLayers(map);
+      ensureFaultLayers(map, showFaultsRef.current);
       if (selectedItemRef.current) {
         displayPopup(selectedItemRef.current, map);
       }
@@ -393,17 +571,27 @@ export const EarthquakeMap: React.FC<EarthquakeMapProps> = ({
 
     const interactiveLayers = ['earthquakes-circle', 'earthquakes-label'];
 
-    // Dynamic click handler for earthquake markers
+    // Dynamic click handler for earthquake markers and fault lines
     map.on('click', (e) => {
       const activeLayers = interactiveLayers.filter(l => map.getLayer(l));
-      if (activeLayers.length === 0) return;
-      const features = map.queryRenderedFeatures(e.point, { layers: activeLayers });
-      if (features && features.length > 0) {
-        const feature = features[0];
-        const props = feature.properties as any;
-        const item = itemsRef.current.find(it => it.id === props.id);
-        if (item) {
-          onSelectRef.current(item);
+      if (activeLayers.length > 0) {
+        const features = map.queryRenderedFeatures(e.point, { layers: activeLayers });
+        if (features && features.length > 0) {
+          const feature = features[0];
+          const props = feature.properties as any;
+          const item = itemsRef.current.find(it => it.id === props.id);
+          if (item) {
+            onSelectRef.current(item);
+            return;
+          }
+        }
+      }
+
+      // Check fault lines if faults layer is active
+      if (showFaultsRef.current && map.getLayer('mta-faults-hitbox')) {
+        const faultFeatures = map.queryRenderedFeatures(e.point, { layers: ['mta-faults-hitbox'] });
+        if (faultFeatures && faultFeatures.length > 0) {
+          displayFaultPopup(faultFeatures[0].properties, [e.lngLat.lng, e.lngLat.lat], map);
         }
       }
     });
@@ -411,9 +599,24 @@ export const EarthquakeMap: React.FC<EarthquakeMapProps> = ({
     // Dynamic pointer cursor on hover
     map.on('mousemove', (e) => {
       const activeLayers = interactiveLayers.filter(l => map.getLayer(l));
-      if (activeLayers.length === 0) return;
-      const features = map.queryRenderedFeatures(e.point, { layers: activeLayers });
-      map.getCanvas().style.cursor = features.length > 0 ? 'pointer' : '';
+      const features = activeLayers.length > 0
+        ? map.queryRenderedFeatures(e.point, { layers: activeLayers })
+        : [];
+
+      if (features.length > 0) {
+        map.getCanvas().style.cursor = 'pointer';
+        return;
+      }
+
+      if (showFaultsRef.current && map.getLayer('mta-faults-hitbox')) {
+        const faultFeatures = map.queryRenderedFeatures(e.point, { layers: ['mta-faults-hitbox'] });
+        if (faultFeatures.length > 0) {
+          map.getCanvas().style.cursor = 'pointer';
+          return;
+        }
+      }
+
+      map.getCanvas().style.cursor = '';
     });
 
     mapRef.current = map;
@@ -421,7 +624,7 @@ export const EarthquakeMap: React.FC<EarthquakeMapProps> = ({
     return () => {
       map.remove();
     };
-  }, [applyTurkishLabels, ensureEarthquakeLayers, displayPopup]);
+  }, [applyTurkishLabels, ensureEarthquakeLayers, ensureFaultLayers, displayPopup, displayFaultPopup]);
 
   // Update GeoJSON data when items change
   useEffect(() => {
@@ -435,6 +638,13 @@ export const EarthquakeMap: React.FC<EarthquakeMapProps> = ({
       ensureEarthquakeLayers(map);
     }
   }, [items, ensureEarthquakeLayers, getGeoJSONCollection]);
+
+  // Synchronize fault layer visibility when showFaults changes
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map || !map.isStyleLoaded()) return;
+    ensureFaultLayers(map, showFaults);
+  }, [showFaults, ensureFaultLayers]);
 
   // Center & popup on selected earthquake
   useEffect(() => {
@@ -472,6 +682,33 @@ export const EarthquakeMap: React.FC<EarthquakeMapProps> = ({
   return (
     <div className="map-wrapper" aria-label="Deprem Haritası">
       <div ref={mapContainerRef} className="map-container" />
+
+      {/* MTA Faults Toggle & Legend */}
+      <div className="map-fault-controls">
+        <button
+          type="button"
+          className={`btn-toggle-faults ${showFaults ? 'active' : ''}`}
+          onClick={toggleFaults}
+          title="MTA Diri Fay Hatları Katmanını Aç/Kapat"
+          aria-pressed={showFaults}
+        >
+          <svg className="fault-icon-svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+            <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />
+          </svg>
+          <span>Diri Faylar</span>
+          <span className={`fault-status-tag ${showFaults ? 'on' : 'off'}`}>
+            {showFaults ? 'Açık' : 'Kapalı'}
+          </span>
+        </button>
+
+        {showFaults && (
+          <div className="faults-mini-legend">
+            <span className="legend-item"><span className="fault-legend-line line-red" /> Doğrultu Atımlı (KAF/DAF)</span>
+            <span className="legend-item"><span className="fault-legend-line line-amber" /> Normal / Graben</span>
+            <span className="legend-item"><span className="fault-legend-line line-blue" /> Bindirme / Ters</span>
+          </div>
+        )}
+      </div>
 
       {/* Map Legend */}
       <div className="map-legend">

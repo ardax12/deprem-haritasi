@@ -4,6 +4,7 @@ import { fetchEarthquakeDetail } from '../services/api';
 import { parseItemLocation } from '../utils/locationHelper';
 import { formatRelativeTime } from '../utils/timeHelper';
 import { IconSea, IconLake, IconGlobe, IconLand, IconShare, IconCheck, IconAlertTriangle } from './Icons';
+import { FeltSummaryCard } from './FeltSummaryCard';
 
 interface EarthquakeDetailModalProps {
   item: EarthquakeItem | null;
@@ -250,6 +251,10 @@ export const EarthquakeDetailModal: React.FC<EarthquakeDetailModalProps> = ({ it
                   <small>km</small>
                 </span>
                 <span className="metric-hint">Yeraltı derinliği</span>
+              </div>
+
+              <div className="full-width">
+                <FeltSummaryCard item={detail.current} />
               </div>
 
               <div className="modal-info-section full-width">

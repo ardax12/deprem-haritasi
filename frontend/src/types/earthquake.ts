@@ -62,6 +62,34 @@ export interface EarthquakeDetail {
   matchScore?: number | null;
 }
 
+export interface FeltReportRequest {
+  feltLevel: 'NOT_FELT' | 'WEAK' | 'MODERATE' | 'STRONG' | 'VIOLENT';
+  motionType?: string;
+  reaction?: string;
+  soundHeard?: boolean;
+  damageObserved?: string;
+  buildingFloor?: number;
+  latitude?: number;
+  longitude?: number;
+  province?: string;
+  district?: string;
+}
+
+export interface ProvinceFeltStat {
+  province: string;
+  count: number;
+  avgIntensity: number;
+}
+
+export interface FeltReportSummary {
+  totalReports: number;
+  averageIntensity: number;
+  intensityCategory: string;
+  dominantReaction: string;
+  reportsByProvince: ProvinceFeltStat[];
+  alreadyReportedByClient: boolean;
+}
+
 export interface SourceCoverage {
   from: string | null;
   to: string | null;

@@ -1,4 +1,4 @@
-import type { EarthquakesResponse, EarthquakeDetail, SystemStatus, FilterParams } from '../types/earthquake';
+import type { EarthquakesResponse, EarthquakeDetail, SystemStatus, FilterParams, FeltReportRequest, FeltReportSummary } from '../types/earthquake';
 
 const API_BASE = '/api/v1';
 
@@ -96,3 +96,39 @@ export async function fetchStatus(): Promise<SystemStatus> {
 
   return res.json();
 }
+
+export async function fetchFeltSummary(eventId: string, signal?: AbortSignal): Promise<FeltReportSummary> {
+  const res = await fetch(`${API_BASE}/earthquakes/${encodeURIComponent(eventId)}/felt-reports/summary`, {
+    headers: {
+      'Accept': 'application/json'
+    },
+    signal
+  });
+
+  if (!res.ok) {
+    throw new Error(`Hissedilme özeti yüklenemedi: HTTP ${res.status}`);
+  }
+
+  return res.json();
+}
+
+export async function submitFeltReport(eventId: string, data: FeltReportRequest): Promise<FeltReportSummary> {
+  const res = await fetch(`${API_BASE}/earthquakes/${encodeURIComponent(eventId)}/felt-reports`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Accept': 'application/json'
+    },
+    body: JSON.stringify(data)
+  });
+
+  if (!res.ok) {
+    if (res.status === 409) {
+      throw new Error('Bu deprem için zaten bildirimde bulundunuz.');
+    }
+    throw new Error(`Bildirim gönderilemedi: HTTP ${res.status}`);
+  }
+
+  return res.json();
+}
+

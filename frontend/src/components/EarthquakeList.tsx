@@ -18,6 +18,150 @@ interface EarthquakeListProps {
   onRetry?: () => void;
 }
 
+const getMagClass = (val?: number | null) => {
+  if (val === null || val === undefined) return 'mag-gray';
+  if (val < 3.0) return 'mag-green';
+  if (val < 4.5) return 'mag-yellow';
+  if (val < 6.0) return 'mag-orange';
+  return 'mag-red';
+};
+
+const formatDate = (isoStr: string) => {
+  try {
+    const date = new Date(isoStr);
+    const tsi = date.toLocaleString('tr-TR', {
+      day: 'numeric',
+      month: 'short',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    }) + ' TSİ';
+
+    const utcTime = date.toISOString().substring(11, 16) + ' UTC';
+    return `${tsi} (${utcTime})`;
+  } catch {
+    return isoStr;
+  }
+};
+
+const formatQuality = (quality?: string | null) => {
+  if (!quality) return '';
+  const q = quality.toUpperCase();
+  if (q === 'AUTOMATIC') return 'Otomatik';
+  if (q === 'MANUAL' || q === 'MANUAL_REVIEWED') return 'İncelendi';
+  if (q === 'PRELIMINARY') return 'Ön Çözüm';
+  return quality;
+};
+
+interface EarthquakeCardItemProps {
+  item: EarthquakeItem;
+  isSelected: boolean;
+  onSelect: (item: EarthquakeItem) => void;
+  onOpenDetail: (item: EarthquakeItem) => void;
+}
+
+const EarthquakeCardItem = React.memo<EarthquakeCardItemProps>(({
+  item,
+  isSelected,
+  onSelect,
+  onOpenDetail
+}) => {
+  const magVal = item.magnitude?.value;
+  const magType = item.magnitude?.type ?? '';
+  const loc = parseItemLocation(item);
+  const relTime = formatRelativeTime(item.occurredAt);
+
+  return (
+    <article
+      className={`earthquake-card ${isSelected ? 'selected' : ''}`}
+      tabIndex={0}
+      role="button"
+      aria-current={isSelected ? 'true' : undefined}
+      aria-label={`${loc.displayTitle}, Büyüklük ${magVal !== null && magVal !== undefined ? magVal.toFixed(1) : 'Raporlanmadı'}, Derinlik ${item.depthKm !== null ? `${item.depthKm} km` : 'Raporlanmadı'}`}
+      onClick={() => onSelect(item)}
+      onKeyDown={(e) => {
+        if (e.target !== e.currentTarget) return;
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          onSelect(item);
+        }
+      }}
+    >
+      <div className="card-top">
+        <div className={`mag-badge ${getMagClass(magVal)}`}>
+          <span className="mag-value">{magVal !== null && magVal !== undefined ? magVal.toFixed(1) : '-'}</span>
+          {magType ? <span className="mag-type">{magType}</span> : null}
+        </div>
+
+        <div className="card-title-block">
+          <div className="card-title-header">
+            <h3 className="card-place-title">
+              {loc.displayTitle}
+            </h3>
+            {relTime && <span className="badge-rel-time">{relTime}</span>}
+          </div>
+          <div className="card-time">
+            <span className="time-with-icon"><IconClock size={12} /> {formatDate(item.occurredAt)}</span>
+            {loc.isLake ? (
+              <span className="card-env-tag lake"><IconLake size={12} /> Göl İçi</span>
+            ) : loc.isOffshore ? (
+              <span className="card-env-tag sea"><IconSea size={12} /> Açık Deniz</span>
+            ) : loc.isCrossBorder ? (
+              <span className="card-env-tag border"><IconGlobe size={12} /> Sınır Ötesi</span>
+            ) : null}
+          </div>
+        </div>
+      </div>
+
+      <div className="card-specs card-details">
+        <span className={`source-tag ${item.source === 'KOERI' ? 'tag-koeri' : 'tag-afad'}`}>
+          {item.source === 'KOERI' ? 'Kandilli' : 'AFAD'}
+        </span>
+        <span className="detail-dot">•</span>
+        <span className="detail-item">
+          Derinlik: <strong>{item.depthKm !== null ? `${item.depthKm} km` : 'Raporlanmadı'}</strong>
+        </span>
+        {item.solutionQuality && (
+          <>
+            <span className="detail-dot">•</span>
+            <span className="detail-quality-badge">{formatQuality(item.solutionQuality)}</span>
+          </>
+        )}
+        {item.matchStatus === 'AUTO_MATCHED' && (
+          <>
+            <span className="detail-dot">•</span>
+            <span className="detail-matched-badge" title="AFAD ve Kandilli bültenleriyle karşılıklı doğrulanmış sismik olay">
+              ✓ AFAD & Kandilli Doğrulandı
+            </span>
+          </>
+        )}
+        {item.revisionNumber > 1 && (
+          <>
+            <span className="detail-dot">•</span>
+            <span className="detail-rev-badge">Güncellendi (Rev. {item.revisionNumber})</span>
+          </>
+        )}
+      </div>
+
+      <div className="card-bottom">
+        <button
+          type="button"
+          className="btn-card-detail"
+          onClick={(e) => {
+            e.stopPropagation();
+            onOpenDetail(item);
+          }}
+          aria-label={`${loc.displayTitle} deprem detaylarını aç, büyüklük ${magVal !== null && magVal !== undefined ? magVal.toFixed(1) : ''} ${magType}`}
+        >
+          Detayları Gör →
+        </button>
+      </div>
+    </article>
+  );
+});
+
+EarthquakeCardItem.displayName = 'EarthquakeCardItem';
+
 export const EarthquakeList: React.FC<EarthquakeListProps> = ({
   items,
   selectedItem,
@@ -32,32 +176,6 @@ export const EarthquakeList: React.FC<EarthquakeListProps> = ({
   onRetry
 }) => {
   const [advisoryVisible, setAdvisoryVisible] = useState<boolean>(true);
-
-  const getMagClass = (val?: number | null) => {
-    if (val === null || val === undefined) return 'mag-gray';
-    if (val < 3.0) return 'mag-green';
-    if (val < 4.5) return 'mag-yellow';
-    if (val < 6.0) return 'mag-orange';
-    return 'mag-red';
-  };
-
-  const formatDate = (isoStr: string) => {
-    try {
-      const date = new Date(isoStr);
-      const tsi = date.toLocaleString('tr-TR', {
-        day: 'numeric',
-        month: 'short',
-        year: 'numeric',
-        hour: '2-digit',
-        minute: '2-digit'
-      }) + ' TSİ';
-
-      const utcTime = date.toISOString().substring(11, 16) + ' UTC';
-      return `${tsi} (${utcTime})`;
-    } catch {
-      return isoStr;
-    }
-  };
 
   if (loading && items.length === 0) {
     return (
@@ -104,15 +222,6 @@ export const EarthquakeList: React.FC<EarthquakeListProps> = ({
     );
   }
 
-  const formatQuality = (quality?: string | null) => {
-    if (!quality) return '';
-    const q = quality.toUpperCase();
-    if (q === 'AUTOMATIC') return 'Otomatik';
-    if (q === 'MANUAL' || q === 'MANUAL_REVIEWED') return 'İncelendi';
-    if (q === 'PRELIMINARY') return 'Ön Çözüm';
-    return quality;
-  };
-
   const countDisplay = totalCount !== undefined && totalCount > items.length
     ? `${items.length} / ${totalCount}`
     : `${items.length}`;
@@ -144,102 +253,15 @@ export const EarthquakeList: React.FC<EarthquakeListProps> = ({
       )}
 
       <div className="earthquake-scroll-area" aria-label="Deprem Listesi">
-        {items.map((item) => {
-          const isSelected = selectedItem?.id === item.id;
-          const magVal = item.magnitude?.value;
-          const magType = item.magnitude?.type ?? '';
-          const loc = parseItemLocation(item);
-          const relTime = formatRelativeTime(item.occurredAt);
-
-          return (
-            <article
-              key={item.id}
-              className={`earthquake-card ${isSelected ? 'selected' : ''}`}
-              tabIndex={0}
-              role="button"
-              aria-current={isSelected ? 'true' : undefined}
-              aria-label={`${loc.displayTitle}, Büyüklük ${magVal !== null && magVal !== undefined ? magVal.toFixed(1) : 'Raporlanmadı'}, Derinlik ${item.depthKm !== null ? `${item.depthKm} km` : 'Raporlanmadı'}`}
-              onClick={() => onSelect(item)}
-              onKeyDown={(e) => {
-                if (e.target !== e.currentTarget) return;
-                if (e.key === 'Enter' || e.key === ' ') {
-                  e.preventDefault();
-                  onSelect(item);
-                }
-              }}
-            >
-              <div className="card-top">
-                <div className={`mag-badge ${getMagClass(magVal)}`}>
-                  <span className="mag-value">{magVal !== null && magVal !== undefined ? magVal.toFixed(1) : '-'}</span>
-                  {magType ? <span className="mag-type">{magType}</span> : null}
-                </div>
-
-                <div className="card-title-block">
-                  <div className="card-title-header">
-                    <h3 className="card-place-title">
-                      {loc.displayTitle}
-                    </h3>
-                    {relTime && <span className="badge-rel-time">{relTime}</span>}
-                  </div>
-                  <div className="card-time">
-                    <span className="time-with-icon"><IconClock size={12} /> {formatDate(item.occurredAt)}</span>
-                    {loc.isLake ? (
-                      <span className="card-env-tag lake"><IconLake size={12} /> Göl İçi</span>
-                    ) : loc.isOffshore ? (
-                      <span className="card-env-tag sea"><IconSea size={12} /> Açık Deniz</span>
-                    ) : loc.isCrossBorder ? (
-                      <span className="card-env-tag border"><IconGlobe size={12} /> Sınır Ötesi</span>
-                    ) : null}
-                  </div>
-                </div>
-              </div>
-
-              <div className="card-specs card-details">
-                <span className={`source-tag ${item.source === 'KOERI' ? 'tag-koeri' : 'tag-afad'}`}>
-                  {item.source === 'KOERI' ? 'Kandilli' : 'AFAD'}
-                </span>
-                <span className="detail-dot">•</span>
-                <span className="detail-item">
-                  Derinlik: <strong>{item.depthKm !== null ? `${item.depthKm} km` : 'Raporlanmadı'}</strong>
-                </span>
-                {item.solutionQuality && (
-                  <>
-                    <span className="detail-dot">•</span>
-                    <span className="detail-quality-badge">{formatQuality(item.solutionQuality)}</span>
-                  </>
-                )}
-                {item.matchStatus === 'AUTO_MATCHED' && (
-                  <>
-                    <span className="detail-dot">•</span>
-                    <span className="detail-matched-badge" title="AFAD ve Kandilli bültenleriyle karşılıklı doğrulanmış sismik olay">
-                      ✓ AFAD & Kandilli Doğrulandı
-                    </span>
-                  </>
-                )}
-                {item.revisionNumber > 1 && (
-                  <>
-                    <span className="detail-dot">•</span>
-                    <span className="detail-rev-badge">Güncellendi (Rev. {item.revisionNumber})</span>
-                  </>
-                )}
-              </div>
-
-              <div className="card-bottom">
-                <button
-                  type="button"
-                  className="btn-card-detail"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onOpenDetail(item);
-                  }}
-                  aria-label={`${loc.displayTitle} deprem detaylarını aç, büyüklük ${magVal !== null && magVal !== undefined ? magVal.toFixed(1) : ''} ${magType}`}
-                >
-                  Detayları Gör →
-                </button>
-              </div>
-            </article>
-          );
-        })}
+        {items.map((item) => (
+          <EarthquakeCardItem
+            key={item.id}
+            item={item}
+            isSelected={selectedItem?.id === item.id}
+            onSelect={onSelect}
+            onOpenDetail={onOpenDetail}
+          />
+        ))}
 
         {hasMore && (
           <div className="list-load-more-container list-load-more">
