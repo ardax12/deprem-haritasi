@@ -1,11 +1,13 @@
 import { useState, useEffect, useCallback, useRef, lazy, Suspense } from 'react';
 import { Header } from './components/Header';
 import { FilterBar } from './components/FilterBar';
-import { EarthquakeMap } from './components/EarthquakeMap';
 import { EarthquakeList } from './components/EarthquakeList';
 import { IconMap, IconList, IconWifiOff, IconAlertTriangle } from './components/Icons';
 import { AiSummarySnippet } from './components/AiSummarySnippet';
 
+const EarthquakeMap = lazy(() =>
+  import('./components/EarthquakeMap').then((m) => ({ default: m.EarthquakeMap }))
+);
 const EarthquakeDetailModal = lazy(() =>
   import('./components/EarthquakeDetailModal').then((m) => ({ default: m.EarthquakeDetailModal }))
 );
@@ -161,8 +163,8 @@ export function App() {
     return () => window.removeEventListener('popstate', handlePopState);
   }, [items]);
 
-  // Fetch first page whenever filters change, cancelling previous in-flight requests
-  useEffect(() => {
+  // Unified data fetcher with cancellation and local storage snapshot fallback
+  const executeFetch = useCallback(async (currentFilters: FilterParams) => {
     abortControllerRef.current?.abort();
     const controller = new AbortController();
     abortControllerRef.current = controller;
@@ -170,71 +172,11 @@ export function App() {
     setLoading(true);
     setError(null);
 
-    const timeWindow = computeTimeWindow(filters.timeRange);
+    const timeWindow = computeTimeWindow(currentFilters.timeRange);
     currentTimeWindowRef.current = timeWindow;
 
-    fetchEarthquakes(filters, 0, timeWindow, controller.signal)
-      .then(response => {
-        if (requestId === activeRequestIdRef.current) {
-          const loadedItems = [...response.items];
-          if (deepLinkedItemRef.current && !loadedItems.some(it => it.id === deepLinkedItemRef.current!.id)) {
-            loadedItems.unshift(deepLinkedItemRef.current);
-          }
-          setItems(loadedItems);
-          setPageInfo(response.page);
-          setFreshness(response.freshness);
-          setLoading(false);
-
-          try {
-            localStorage.setItem('deprem_last_snapshot', JSON.stringify({
-              items: loadedItems.slice(0, 50),
-              page: response.page,
-              freshness: response.freshness,
-              timestamp: Date.now()
-            }));
-          } catch {
-            // ignore
-          }
-        }
-      })
-      .catch(err => {
-        if (err.name === 'AbortError') return;
-        if (requestId === activeRequestIdRef.current) {
-          setError(err.message || 'Veriler alınamadı');
-          setLoading(false);
-          try {
-            const cached = localStorage.getItem('deprem_last_snapshot');
-            if (cached) {
-              const parsed = JSON.parse(cached);
-              if (parsed.items && parsed.items.length > 0) {
-                setItems(parsed.items);
-                setPageInfo(parsed.page);
-                setFreshness(parsed.freshness);
-              }
-            }
-          } catch {
-            // ignore
-          }
-        }
-      });
-
-    return () => {
-      controller.abort();
-    };
-  }, [filters]);
-
-  const refreshData = useCallback(async () => {
-    abortControllerRef.current?.abort();
-    const controller = new AbortController();
-    abortControllerRef.current = controller;
-    const requestId = ++activeRequestIdRef.current;
-    setLoading(true);
-    setError(null);
-
     try {
-      const timeWindow = computeTimeWindow(filters.timeRange);
-      currentTimeWindowRef.current = timeWindow;
-      const response = await fetchEarthquakes(filters, 0, timeWindow, controller.signal);
+      const response = await fetchEarthquakes(currentFilters, 0, timeWindow, controller.signal);
       if (requestId === activeRequestIdRef.current) {
         const loadedItems = [...response.items];
         if (deepLinkedItemRef.current && !loadedItems.some(it => it.id === deepLinkedItemRef.current!.id)) {
@@ -259,13 +201,38 @@ export function App() {
       if (err.name === 'AbortError') return;
       if (requestId === activeRequestIdRef.current) {
         setError(err.message || 'Veriler alınamadı');
+        try {
+          const cached = localStorage.getItem('deprem_last_snapshot');
+          if (cached) {
+            const parsed = JSON.parse(cached);
+            if (parsed.items && parsed.items.length > 0) {
+              setItems(parsed.items);
+              setPageInfo(parsed.page);
+              setFreshness(parsed.freshness);
+            }
+          }
+        } catch {
+          // ignore
+        }
       }
     } finally {
       if (requestId === activeRequestIdRef.current) {
         setLoading(false);
       }
     }
-  }, [filters]);
+  }, []);
+
+  // Fetch first page whenever filters change
+  useEffect(() => {
+    executeFetch(filters);
+    return () => {
+      abortControllerRef.current?.abort();
+    };
+  }, [filters, executeFetch]);
+
+  const refreshData = useCallback(() => {
+    executeFetch(filters);
+  }, [filters, executeFetch]);
 
   // Periodic 5-minute auto-refresh (only when tab is visible)
   useEffect(() => {
@@ -455,14 +422,21 @@ export function App() {
               <IconList size={14} /> Listeye Dön
             </button>
           )}
-          <EarthquakeMap
-            items={items}
-            selectedItem={selectedItem}
-            activeProvince={activeProvince}
-            isVisible={activeTab === 'map'}
-            onSelect={handleSelectItem}
-            onOpenDetail={handleOpenDetail}
-          />
+          <Suspense fallback={
+            <div className="map-loading-placeholder" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%', minHeight: '350px', color: '#94a3b8' }}>
+              <div className="loader-spinner" style={{ marginBottom: '12px' }} />
+              <p>Harita bileşeni yükleniyor...</p>
+            </div>
+          }>
+            <EarthquakeMap
+              items={items}
+              selectedItem={selectedItem}
+              activeProvince={activeProvince}
+              isVisible={activeTab === 'map'}
+              onSelect={handleSelectItem}
+              onOpenDetail={handleOpenDetail}
+            />
+          </Suspense>
         </div>
 
         <div

@@ -84,23 +84,51 @@ export const EarthquakeMap: React.FC<EarthquakeMapProps> = ({
 
     const popupContent = document.createElement('div');
     popupContent.className = 'fault-popup-card';
-    popupContent.innerHTML = `
-      <div class="fault-popup-header">
-        <span class="fault-kinematics-pill" style="background-color: ${typeColor}22; color: ${typeColor}; border: 1px solid ${typeColor}55">
-          ${props.type === 'STRIKE_SLIP' ? 'Doğrultu Atımlı' : props.type === 'NORMAL' ? 'Normal / Graben' : 'Bindirme / Ters'}
-        </span>
-        <div class="fault-badge-title">${props.name || 'Diri Fay Segmenti'}</div>
-        <div class="fault-badge-zone">${props.zone || 'Türkiye Diri Fay Kuşağı'}</div>
-      </div>
-      <div class="fault-popup-row">
-        <span class="fault-row-label">Kinematik Tip:</span>
-        <strong>${typeDesc}</strong>
-      </div>
-      <div class="fault-popup-row">
-        <span class="fault-row-label">Kaynak:</span>
-        <span class="fault-source-mta">MTA 1:1.250.000 Diri Fay Veri Seti</span>
-      </div>
-    `;
+
+    const header = document.createElement('div');
+    header.className = 'fault-popup-header';
+
+    const pill = document.createElement('span');
+    pill.className = 'fault-kinematics-pill';
+    pill.style.backgroundColor = `${typeColor}22`;
+    pill.style.color = typeColor;
+    pill.style.border = `1px solid ${typeColor}55`;
+    pill.textContent = props.type === 'STRIKE_SLIP' ? 'Doğrultu Atımlı' : props.type === 'NORMAL' ? 'Normal / Graben' : 'Bindirme / Ters';
+    header.appendChild(pill);
+
+    const badgeTitle = document.createElement('div');
+    badgeTitle.className = 'fault-badge-title';
+    badgeTitle.textContent = props.name || 'Diri Fay Segmenti';
+    header.appendChild(badgeTitle);
+
+    const badgeZone = document.createElement('div');
+    badgeZone.className = 'fault-badge-zone';
+    badgeZone.textContent = props.zone || 'Türkiye Diri Fay Kuşağı';
+    header.appendChild(badgeZone);
+    popupContent.appendChild(header);
+
+    const row1 = document.createElement('div');
+    row1.className = 'fault-popup-row';
+    const label1 = document.createElement('span');
+    label1.className = 'fault-row-label';
+    label1.textContent = 'Kinematik Tip:';
+    const strong1 = document.createElement('strong');
+    strong1.textContent = typeDesc;
+    row1.appendChild(label1);
+    row1.appendChild(strong1);
+    popupContent.appendChild(row1);
+
+    const row2 = document.createElement('div');
+    row2.className = 'fault-popup-row';
+    const label2 = document.createElement('span');
+    label2.className = 'fault-row-label';
+    label2.textContent = 'Kaynak:';
+    const span2 = document.createElement('span');
+    span2.className = 'fault-source-mta';
+    span2.textContent = 'MTA 1:1.250.000 Diri Fay Veri Seti';
+    row2.appendChild(label2);
+    row2.appendChild(span2);
+    popupContent.appendChild(row2);
 
     faultPopupRef.current = new Popup({ offset: 10, closeButton: true })
       .setLngLat(lngLat)

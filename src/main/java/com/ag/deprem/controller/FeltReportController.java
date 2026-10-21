@@ -4,6 +4,7 @@ import com.ag.deprem.model.dto.FeltReportRequestDto;
 import com.ag.deprem.model.dto.FeltReportSummaryDto;
 import com.ag.deprem.service.FeltReportService;
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -21,7 +22,7 @@ public class FeltReportController {
     @PostMapping
     public ResponseEntity<FeltReportSummaryDto> submitFeltReport(
             @PathVariable String id,
-            @RequestBody FeltReportRequestDto request,
+            @Valid @RequestBody FeltReportRequestDto request,
             HttpServletRequest servletRequest) {
 
         String clientIp = extractClientIp(servletRequest);
@@ -40,19 +41,23 @@ public class FeltReportController {
     }
 
     private String extractClientIp(HttpServletRequest request) {
+        // 1. Nginx sets X-Real-IP from $remote_addr (authoritative behind reverse proxy)
+        String xRealIp = request.getHeader("X-Real-IP");
+        if (xRealIp != null && !xRealIp.isBlank()) {
+            return xRealIp.trim();
+        }
+
+        // 2. Cloudflare Connecting IP
         String cfConnectingIp = request.getHeader("CF-Connecting-IP");
         if (cfConnectingIp != null && !cfConnectingIp.isBlank()) {
             return cfConnectingIp.trim();
         }
 
+        // 3. Fallback to X-Forwarded-For: take the rightmost IP (closest trusted reverse-proxy hop)
         String xForwardedFor = request.getHeader("X-Forwarded-For");
         if (xForwardedFor != null && !xForwardedFor.isBlank()) {
-            // First IP in the comma-separated chain is the client IP
-            int idx = xForwardedFor.indexOf(',');
-            if (idx > 0) {
-                return xForwardedFor.substring(0, idx).trim();
-            }
-            return xForwardedFor.trim();
+            String[] hops = xForwardedFor.split(",");
+            return hops[hops.length - 1].trim();
         }
 
         return request.getRemoteAddr();

@@ -29,6 +29,19 @@ public class GlobalExceptionHandler {
         return problem;
     }
 
+    @ExceptionHandler(org.springframework.web.bind.MethodArgumentNotValidException.class)
+    public ProblemDetail handleValidationException(org.springframework.web.bind.MethodArgumentNotValidException e) {
+        String detail = e.getBindingResult().getFieldErrors().stream()
+                .map(err -> err.getField() + ": " + err.getDefaultMessage())
+                .reduce((a, b) -> a + "; " + b)
+                .orElse("Doğrulama hatası");
+        log.warn("Validation failure: {}", detail);
+        ProblemDetail problem = ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST, detail);
+        problem.setTitle("Geçersiz Veri Girişi");
+        problem.setType(URI.create("urn:deprem:bad-request-validation"));
+        return problem;
+    }
+
     @ExceptionHandler(IllegalStateException.class)
     public ProblemDetail handleIllegalState(IllegalStateException e) {
         log.warn("Illegal state conflict: {}", e.getMessage());

@@ -14,6 +14,7 @@ import com.ag.deprem.repository.SourceReportRevisionRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -25,7 +26,6 @@ import java.security.NoSuchAlgorithmException;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.*;
-import java.util.stream.Collectors;
 
 @Service
 public class FeltReportService {
@@ -53,7 +53,7 @@ public class FeltReportService {
 
     @Transactional
     public FeltReportSummaryDto submitReport(String eventIdStr, FeltReportRequestDto request, String clientIp) {
-        SourceReport report = findReportByIdString(eventIdStr)
+        SourceReport report = reportRepository.findReportByIdString(eventIdStr)
                 .orElseThrow(() -> new NoSuchElementException("Deprem bulunamadı: " + eventIdStr));
 
         // Verify time window (< 48 hours from occurrence)
@@ -71,10 +71,8 @@ public class FeltReportService {
         Set<UUID> clusterReportIds = getClusterReportIds(report.getId());
 
         // Check if client has already submitted for any report in this cluster
-        for (UUID rId : clusterReportIds) {
-            if (feltReportRepository.existsBySourceReportIdAndIpHash(rId, ipHash)) {
-                throw new IllegalStateException("Bu deprem için zaten bildirimde bulundunuz.");
-            }
+        if (feltReportRepository.existsBySourceReportIdInAndIpHash(clusterReportIds, ipHash)) {
+            throw new IllegalStateException("Bu deprem için zaten bildirimde bulundunuz.");
         }
 
         int intensity = calculateEmsIntensity(request);
@@ -110,16 +108,24 @@ public class FeltReportService {
 
     @Transactional(readOnly = true)
     public FeltReportSummaryDto getSummary(String eventIdStr, String clientIp) {
-        SourceReport report = findReportByIdString(eventIdStr)
+        SourceReport report = reportRepository.findReportByIdString(eventIdStr)
                 .orElseThrow(() -> new NoSuchElementException("Deprem bulunamadı: " + eventIdStr));
 
         Set<UUID> clusterReportIds = getClusterReportIds(report.getId());
-        List<FeltReport> reports = feltReportRepository.findReportsForReports(clusterReportIds);
+        List<Object[]> intensityRows = feltReportRepository.getIntensitySummary(clusterReportIds);
+
+        long totalReports = 0L;
+        double avgIntensity = 0.0;
+        if (!intensityRows.isEmpty()) {
+            Object[] row = intensityRows.get(0);
+            totalReports = row[0] instanceof Number n ? n.longValue() : 0L;
+            avgIntensity = row[1] instanceof Number n ? n.doubleValue() : 0.0;
+        }
 
         FeltReportSummaryDto summary = new FeltReportSummaryDto();
-        summary.setTotalReports(reports.size());
+        summary.setTotalReports((int) totalReports);
 
-        if (reports.isEmpty()) {
+        if (totalReports == 0L) {
             summary.setAverageIntensity(0.0);
             summary.setIntensityCategory("Bildirim Yok");
             summary.setDominantReaction("Henüz bildirim yapılmadı");
@@ -127,46 +133,34 @@ public class FeltReportService {
             return summary;
         }
 
-        double avgIntensity = reports.stream()
-                .mapToInt(FeltReport::getCalculatedIntensity)
-                .average()
-                .orElse(0.0);
         summary.setAverageIntensity(BigDecimal.valueOf(avgIntensity).setScale(1, RoundingMode.HALF_UP).doubleValue());
         summary.setIntensityCategory(getIntensityCategory(avgIntensity));
 
-        // Dominant reaction
-        Map<String, Long> reactionCounts = reports.stream()
-                .filter(r -> r.getReaction() != null && !r.getReaction().isBlank())
-                .collect(Collectors.groupingBy(FeltReport::getReaction, Collectors.counting()));
-        String topReaction = reactionCounts.entrySet().stream()
-                .max(Map.Entry.comparingByValue())
-                .map(Map.Entry::getKey)
-                .orElse("SURPRISED");
+        // Dominant reaction via SQL aggregation
+        List<Object[]> reactionRows = feltReportRepository.findDominantReaction(clusterReportIds, PageRequest.of(0, 1));
+        String topReaction = !reactionRows.isEmpty() && reactionRows.get(0)[0] != null
+                ? reactionRows.get(0)[0].toString()
+                : "SURPRISED";
         summary.setDominantReaction(formatReactionText(topReaction));
 
-        // Group by province
-        Map<String, List<FeltReport>> byProvince = reports.stream()
-                .filter(r -> r.getProvince() != null && !r.getProvince().isBlank())
-                .collect(Collectors.groupingBy(FeltReport::getProvince));
-
-        List<ProvinceFeltStatDto> provStats = byProvince.entrySet().stream()
-                .map(e -> {
-                    double pAvg = e.getValue().stream().mapToInt(FeltReport::getCalculatedIntensity).average().orElse(0.0);
-                    return new ProvinceFeltStatDto(
-                            e.getKey(),
-                            e.getValue().size(),
-                            BigDecimal.valueOf(pAvg).setScale(1, RoundingMode.HALF_UP).doubleValue()
-                    );
-                })
-                .sorted(Comparator.comparingLong(ProvinceFeltStatDto::getCount).reversed())
-                .limit(10)
-                .toList();
+        // Group by province via SQL aggregation (Top 10)
+        List<Object[]> provRows = feltReportRepository.findProvinceStats(clusterReportIds, PageRequest.of(0, 10));
+        List<ProvinceFeltStatDto> provStats = provRows.stream().map(row -> {
+            String prov = row[0] != null ? row[0].toString() : "";
+            long cnt = row[1] instanceof Number n ? n.longValue() : 0L;
+            double pAvg = row[2] instanceof Number n ? n.doubleValue() : 0.0;
+            return new ProvinceFeltStatDto(
+                    prov,
+                    (int) cnt,
+                    BigDecimal.valueOf(pAvg).setScale(1, RoundingMode.HALF_UP).doubleValue()
+            );
+        }).toList();
         summary.setReportsByProvince(provStats);
 
-        // Check if current client already submitted
+        // Check if current client already submitted via indexed query
         if (clientIp != null && !clientIp.isBlank()) {
             String ipHash = hashClientIp(clientIp);
-            boolean already = reports.stream().anyMatch(r -> ipHash.equals(r.getIpHash()));
+            boolean already = feltReportRepository.existsBySourceReportIdInAndIpHash(clusterReportIds, ipHash);
             summary.setAlreadyReportedByClient(already);
         }
 
@@ -274,27 +268,6 @@ public class FeltReportService {
             return hexString.toString();
         } catch (NoSuchAlgorithmException e) {
             throw new RuntimeException("SHA-256 algorithm not available", e);
-        }
-    }
-
-    private Optional<SourceReport> findReportByIdString(String idStr) {
-        if (idStr == null || idStr.isBlank()) {
-            return Optional.empty();
-        }
-        String lower = idStr.toLowerCase();
-        if (lower.startsWith("afad:")) {
-            return reportRepository.findBySourceAndSourceEventId("AFAD", idStr.substring(5));
-        } else if (lower.startsWith("koeri:")) {
-            return reportRepository.findBySourceAndSourceEventId("KOERI", idStr.substring(6));
-        }
-
-        try {
-            UUID uuid = UUID.fromString(idStr);
-            return reportRepository.findById(uuid);
-        } catch (IllegalArgumentException e) {
-            Optional<SourceReport> afadOpt = reportRepository.findBySourceAndSourceEventId("AFAD", idStr);
-            if (afadOpt.isPresent()) return afadOpt;
-            return reportRepository.findBySourceAndSourceEventId("KOERI", idStr);
         }
     }
 

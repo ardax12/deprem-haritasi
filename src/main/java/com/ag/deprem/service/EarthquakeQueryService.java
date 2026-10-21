@@ -216,7 +216,7 @@ public class EarthquakeQueryService {
     }
 
     public Optional<EarthquakeDetailDto> getEarthquakeDetail(String idStr) {
-        Optional<SourceReport> reportOpt = findReportByIdString(idStr);
+        Optional<SourceReport> reportOpt = reportRepository.findReportByIdString(idStr);
         if (reportOpt.isEmpty()) {
             return Optional.empty();
         }
@@ -306,31 +306,6 @@ public class EarthquakeQueryService {
         );
 
         return new StatusResponseDto("available", "live", List.of(afadStatus, koeriStatus));
-    }
-
-    private Optional<SourceReport> findReportByIdString(String idStr) {
-        if (idStr == null || idStr.isBlank()) {
-            return Optional.empty();
-        }
-        String lower = idStr.toLowerCase();
-        if (lower.startsWith("afad:")) {
-            String eventId = idStr.substring(5);
-            return reportRepository.findBySourceAndSourceEventId("AFAD", eventId);
-        } else if (lower.startsWith("koeri:")) {
-            String eventId = idStr.substring(6);
-            return reportRepository.findBySourceAndSourceEventId("KOERI", eventId);
-        }
-
-        try {
-            UUID uuid = UUID.fromString(idStr);
-            return reportRepository.findById(uuid);
-        } catch (IllegalArgumentException e) {
-            Optional<SourceReport> afadOpt = reportRepository.findBySourceAndSourceEventId("AFAD", idStr);
-            if (afadOpt.isPresent()) {
-                return afadOpt;
-            }
-            return reportRepository.findBySourceAndSourceEventId("KOERI", idStr);
-        }
     }
 
     private EarthquakeItemDto mapToItemDto(SourceReportRevision rev) {

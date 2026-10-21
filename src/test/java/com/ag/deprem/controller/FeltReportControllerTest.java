@@ -108,4 +108,83 @@ class FeltReportControllerTest {
                         .header("X-Forwarded-For", "203.0.113.195"))
                 .andExpect(status().isConflict());
     }
+
+    @Test
+    void testValidationFailuresOnInvalidPayload() throws Exception {
+        String eventId = "afad:731199";
+
+        // Invalid felt level
+        FeltReportRequestDto req1 = new FeltReportRequestDto();
+        req1.setFeltLevel("CATASTROPHIC_EXPLOSION"); // Invalid enum value
+        mockMvc.perform(post("/api/v1/earthquakes/" + eventId + "/felt-reports")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(req1)))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.type").value("urn:deprem:bad-request-validation"));
+
+        // Oversized province (> 64 chars)
+        FeltReportRequestDto req2 = new FeltReportRequestDto();
+        req2.setFeltLevel("MODERATE");
+        req2.setProvince("A".repeat(65));
+        mockMvc.perform(post("/api/v1/earthquakes/" + eventId + "/felt-reports")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(req2)))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.type").value("urn:deprem:bad-request-validation"));
+
+        // Invalid latitude
+        FeltReportRequestDto req3 = new FeltReportRequestDto();
+        req3.setFeltLevel("WEAK");
+        req3.setLatitude(120.0); // Out of [-90, 90]
+        mockMvc.perform(post("/api/v1/earthquakes/" + eventId + "/felt-reports")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(req3)))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.type").value("urn:deprem:bad-request-validation"));
+    }
+
+    @Test
+    void testIpResolutionPrecedenceAndAntiSpoofing() throws Exception {
+        String eventId = "afad:731199";
+
+        FeltReportRequestDto request = new FeltReportRequestDto();
+        request.setFeltLevel("WEAK");
+        request.setProvince("Ankara");
+        String json = objectMapper.writeValueAsString(request);
+
+        // Client attempts to spoof by injecting leading fake IP in X-Forwarded-For: "1.2.3.4, 198.51.100.50"
+        // Backend extracts rightmost hop: 198.51.100.50
+        mockMvc.perform(post("/api/v1/earthquakes/" + eventId + "/felt-reports")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(json)
+                        .header("X-Forwarded-For", "1.2.3.4, 198.51.100.50"))
+                .andExpect(status().isCreated());
+
+        // Attacker attempts second submission changing the spoofed front IP: "5.6.7.8, 198.51.100.50"
+        // Since rightmost is still 198.51.100.50, duplicate check blocks it!
+        mockMvc.perform(post("/api/v1/earthquakes/" + eventId + "/felt-reports")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(json)
+                        .header("X-Forwarded-For", "5.6.7.8, 198.51.100.50"))
+                .andExpect(status().isConflict());
+
+        // X-Real-IP takes precedence over X-Forwarded-For
+        FeltReportRequestDto request2 = new FeltReportRequestDto();
+        request2.setFeltLevel("MODERATE");
+        request2.setProvince("Bursa");
+        mockMvc.perform(post("/api/v1/earthquakes/" + eventId + "/felt-reports")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request2))
+                        .header("X-Real-IP", "192.0.2.1")
+                        .header("X-Forwarded-For", "9.9.9.9"))
+                .andExpect(status().isCreated());
+
+        // Second submission with same X-Real-IP blocked
+        mockMvc.perform(post("/api/v1/earthquakes/" + eventId + "/felt-reports")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request2))
+                        .header("X-Real-IP", "192.0.2.1")
+                        .header("X-Forwarded-For", "8.8.8.8"))
+                .andExpect(status().isConflict());
+    }
 }

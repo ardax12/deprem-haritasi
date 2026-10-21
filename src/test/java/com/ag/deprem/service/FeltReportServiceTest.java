@@ -45,6 +45,7 @@ class FeltReportServiceTest {
 
     @BeforeEach
     void setUp() {
+        lenient().when(reportRepository.findReportByIdString(anyString())).thenCallRealMethod();
         service = new FeltReportService(feltReportRepository, reportRepository, revisionRepository, matchRepository, "test-salt-123");
     }
 
@@ -84,7 +85,7 @@ class FeltReportServiceTest {
         when(reportRepository.findBySourceAndSourceEventId("AFAD", "12345")).thenReturn(Optional.of(report));
         when(revisionRepository.findById(rev.getId())).thenReturn(Optional.of(rev));
         when(matchRepository.findAllByReportId(reportId)).thenReturn(Collections.emptyList());
-        when(feltReportRepository.existsBySourceReportIdAndIpHash(eq(reportId), anyString())).thenReturn(true);
+        when(feltReportRepository.existsBySourceReportIdInAndIpHash(anyCollection(), anyString())).thenReturn(true);
 
         FeltReportRequestDto req = new FeltReportRequestDto();
         req.setFeltLevel("MODERATE");
@@ -95,7 +96,7 @@ class FeltReportServiceTest {
     }
 
     @Test
-    @DisplayName("getSummary should aggregate reports across matched AFAD and Kandilli twin events")
+    @DisplayName("getSummary should aggregate reports across matched AFAD and Kandilli twin events via SQL aggregations")
     void testSummaryAggregatesAcrossCluster() {
         UUID afadId = UUID.randomUUID();
         UUID koeriId = UUID.randomUUID();
@@ -111,21 +112,15 @@ class FeltReportServiceTest {
         when(reportRepository.findBySourceAndSourceEventId("AFAD", "afad-100")).thenReturn(Optional.of(afadReport));
         when(matchRepository.findAllByReportId(afadId)).thenReturn(List.of(match));
 
-        FeltReport r1 = new FeltReport();
-        r1.setId(UUID.randomUUID());
-        r1.setSourceReport(afadReport);
-        r1.setCalculatedIntensity(4);
-        r1.setProvince("İzmir");
-        r1.setReaction("SURPRISED");
-
-        FeltReport r2 = new FeltReport();
-        r2.setId(UUID.randomUUID());
-        r2.setSourceReport(koeriReport); // Submitted on Kandilli card
-        r2.setCalculatedIntensity(6);
-        r2.setProvince("İzmir");
-        r2.setReaction("FRIGHTENED");
-
-        when(feltReportRepository.findReportsForReports(anyCollection())).thenReturn(List.of(r1, r2));
+        // Mock SQL aggregations
+        when(feltReportRepository.getIntensitySummary(anyCollection()))
+                .thenReturn(List.<Object[]>of(new Object[]{2L, 5.0}));
+        when(feltReportRepository.findDominantReaction(anyCollection(), any()))
+                .thenReturn(List.<Object[]>of(new Object[]{"FRIGHTENED", 1L}));
+        when(feltReportRepository.findProvinceStats(anyCollection(), any()))
+                .thenReturn(List.<Object[]>of(new Object[]{"İzmir", 2L, 5.0}));
+        when(feltReportRepository.existsBySourceReportIdInAndIpHash(anyCollection(), anyString()))
+                .thenReturn(false);
 
         FeltReportSummaryDto summary = service.getSummary("afad:afad-100", "192.168.1.1");
 
@@ -134,5 +129,6 @@ class FeltReportServiceTest {
         assertThat(summary.getReportsByProvince()).hasSize(1);
         assertThat(summary.getReportsByProvince().get(0).getProvince()).isEqualTo("İzmir");
         assertThat(summary.getReportsByProvince().get(0).getCount()).isEqualTo(2);
+        assertThat(summary.getDominantReaction()).isEqualTo("Korku ve panik hissedildi");
     }
 }
