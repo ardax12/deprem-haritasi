@@ -3,7 +3,6 @@ package com.ag.deprem.service;
 import com.ag.deprem.model.dto.FeltReportRequestDto;
 import com.ag.deprem.model.dto.FeltReportSummaryDto;
 import com.ag.deprem.model.entity.EventMatch;
-import com.ag.deprem.model.entity.FeltReport;
 import com.ag.deprem.model.entity.SourceReport;
 import com.ag.deprem.model.entity.SourceReportRevision;
 import com.ag.deprem.repository.EventMatchRepository;
@@ -19,7 +18,10 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
-import java.util.*;
+import java.util.Collections;
+import java.util.List;
+import java.util.Optional;
+import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;

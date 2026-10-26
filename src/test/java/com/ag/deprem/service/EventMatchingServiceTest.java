@@ -2,8 +2,14 @@ package com.ag.deprem.service;
 
 import com.ag.deprem.model.dto.AfadRawEventDto;
 import com.ag.deprem.model.dto.KoeriRawEventDto;
-import com.ag.deprem.model.entity.*;
-import com.ag.deprem.repository.*;
+import com.ag.deprem.model.entity.EventGroup;
+import com.ag.deprem.model.entity.EventGroupMember;
+import com.ag.deprem.model.entity.EventMatch;
+import com.ag.deprem.repository.EventGroupMemberRepository;
+import com.ag.deprem.repository.EventGroupRepository;
+import com.ag.deprem.repository.EventMatchRepository;
+import com.ag.deprem.repository.SourceReportRepository;
+import com.ag.deprem.repository.SourceReportRevisionRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -11,7 +17,6 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
-import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
 

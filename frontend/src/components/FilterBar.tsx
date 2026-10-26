@@ -17,12 +17,14 @@ export const FilterBar: React.FC<FilterBarProps> = ({
   itemsCount,
   totalCount
 }) => {
+  const [prevPlace, setPrevPlace] = useState(filters.place);
   const [localPlace, setLocalPlace] = useState(filters.place);
 
   // Sync local place input when parent filters change (e.g. on reset)
-  useEffect(() => {
+  if (filters.place !== prevPlace) {
+    setPrevPlace(filters.place);
     setLocalPlace(filters.place);
-  }, [filters.place]);
+  }
 
   // Debounce search input by 350ms to prevent request flooding and race conditions
   useEffect(() => {

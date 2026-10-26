@@ -163,21 +163,34 @@ export function App() {
     return () => window.removeEventListener('popstate', handlePopState);
   }, [items]);
 
-  // Unified data fetcher with cancellation and local storage snapshot fallback
-  const executeFetch = useCallback(async (currentFilters: FilterParams) => {
+  const [prevFilters, setPrevFilters] = useState(filters);
+  if (filters !== prevFilters) {
+    setPrevFilters(filters);
+    setLoading(true);
+    setError(null);
+  }
+
+  const [refreshTrigger, setRefreshTrigger] = useState<number>(0);
+
+  const refreshData = useCallback(() => {
+    setLoading(true);
+    setRefreshTrigger(prev => prev + 1);
+  }, []);
+
+  // Fetch first page whenever filters or refresh trigger change
+  useEffect(() => {
+    let ignore = false;
     abortControllerRef.current?.abort();
     const controller = new AbortController();
     abortControllerRef.current = controller;
     const requestId = ++activeRequestIdRef.current;
-    setLoading(true);
-    setError(null);
 
-    const timeWindow = computeTimeWindow(currentFilters.timeRange);
+    const timeWindow = computeTimeWindow(filters.timeRange);
     currentTimeWindowRef.current = timeWindow;
 
-    try {
-      const response = await fetchEarthquakes(currentFilters, 0, timeWindow, controller.signal);
-      if (requestId === activeRequestIdRef.current) {
+    fetchEarthquakes(filters, 0, timeWindow, controller.signal)
+      .then(response => {
+        if (ignore || requestId !== activeRequestIdRef.current) return;
         const loadedItems = [...response.items];
         if (deepLinkedItemRef.current && !loadedItems.some(it => it.id === deepLinkedItemRef.current!.id)) {
           loadedItems.unshift(deepLinkedItemRef.current);
@@ -196,43 +209,37 @@ export function App() {
         } catch {
           // ignore
         }
-      }
-    } catch (err: any) {
-      if (err.name === 'AbortError') return;
-      if (requestId === activeRequestIdRef.current) {
-        setError(err.message || 'Veriler alınamadı');
-        try {
-          const cached = localStorage.getItem('deprem_last_snapshot');
-          if (cached) {
-            const parsed = JSON.parse(cached);
-            if (parsed.items && parsed.items.length > 0) {
-              setItems(parsed.items);
-              setPageInfo(parsed.page);
-              setFreshness(parsed.freshness);
+      })
+      .catch((err: any) => {
+        if (ignore || err.name === 'AbortError') return;
+        if (requestId === activeRequestIdRef.current) {
+          setError(err.message || 'Veriler alınamadı');
+          try {
+            const cached = localStorage.getItem('deprem_last_snapshot');
+            if (cached) {
+              const parsed = JSON.parse(cached);
+              if (parsed.items && parsed.items.length > 0) {
+                setItems(parsed.items);
+                setPageInfo(parsed.page);
+                setFreshness(parsed.freshness);
+              }
             }
+          } catch {
+            // ignore
           }
-        } catch {
-          // ignore
         }
-      }
-    } finally {
-      if (requestId === activeRequestIdRef.current) {
-        setLoading(false);
-      }
-    }
-  }, []);
+      })
+      .finally(() => {
+        if (!ignore && requestId === activeRequestIdRef.current) {
+          setLoading(false);
+        }
+      });
 
-  // Fetch first page whenever filters change
-  useEffect(() => {
-    executeFetch(filters);
     return () => {
-      abortControllerRef.current?.abort();
+      ignore = true;
+      controller.abort();
     };
-  }, [filters, executeFetch]);
-
-  const refreshData = useCallback(() => {
-    executeFetch(filters);
-  }, [filters, executeFetch]);
+  }, [filters, refreshTrigger]);
 
   // Periodic 5-minute auto-refresh (only when tab is visible)
   useEffect(() => {

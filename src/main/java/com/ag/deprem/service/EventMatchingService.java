@@ -1,6 +1,10 @@
 package com.ag.deprem.service;
 
-import com.ag.deprem.model.entity.*;
+import com.ag.deprem.model.entity.EventGroup;
+import com.ag.deprem.model.entity.EventGroupMember;
+import com.ag.deprem.model.entity.EventMatch;
+import com.ag.deprem.model.entity.SourceReport;
+import com.ag.deprem.model.entity.SourceReportRevision;
 import com.ag.deprem.repository.EventGroupMemberRepository;
 import com.ag.deprem.repository.EventGroupRepository;
 import com.ag.deprem.repository.EventMatchRepository;
@@ -9,12 +13,16 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Duration;
 import java.time.Instant;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.List;
+import java.util.Locale;
+import java.util.Optional;
+import java.util.UUID;
 
 @Service
 public class EventMatchingService {

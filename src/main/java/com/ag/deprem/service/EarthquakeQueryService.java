@@ -1,6 +1,13 @@
 package com.ag.deprem.service;
 
-import com.ag.deprem.model.dto.*;
+import com.ag.deprem.model.dto.EarthquakeDetailDto;
+import com.ag.deprem.model.dto.EarthquakeItemDto;
+import com.ag.deprem.model.dto.EarthquakesListResponseDto;
+import com.ag.deprem.model.dto.FreshnessDto;
+import com.ag.deprem.model.dto.LocationInfoDto;
+import com.ag.deprem.model.dto.MagnitudeDto;
+import com.ag.deprem.model.dto.PageInfoDto;
+import com.ag.deprem.model.dto.StatusResponseDto;
 import com.ag.deprem.model.entity.EventMatch;
 import com.ag.deprem.model.entity.SourceReport;
 import com.ag.deprem.model.entity.SourceReportRevision;

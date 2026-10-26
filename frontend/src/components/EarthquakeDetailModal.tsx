@@ -12,10 +12,18 @@ interface EarthquakeDetailModalProps {
 }
 
 export const EarthquakeDetailModal: React.FC<EarthquakeDetailModalProps> = ({ item, onClose }) => {
+  const [prevItemId, setPrevItemId] = useState<string | null>(null);
   const [detail, setDetail] = useState<EarthquakeDetail | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const [copied, setCopied] = useState<boolean>(false);
+
+  if (item && item.id !== prevItemId) {
+    setPrevItemId(item.id);
+    setDetail(null);
+    setLoading(true);
+    setError(null);
+  }
 
   const modalRef = useRef<HTMLDivElement>(null);
   const closeBtnRef = useRef<HTMLButtonElement>(null);
@@ -91,15 +99,13 @@ export const EarthquakeDetailModal: React.FC<EarthquakeDetailModalProps> = ({ it
     }
   };
 
+  const itemId = item?.id;
   useEffect(() => {
-    if (!item) return;
-    setDetail(null);
-    setLoading(true);
-    setError(null);
+    if (!itemId) return;
 
     const controller = new AbortController();
 
-    fetchEarthquakeDetail(item.id, controller.signal)
+    fetchEarthquakeDetail(itemId, controller.signal)
       .then(res => {
         setDetail(res);
         setLoading(false);
@@ -113,7 +119,7 @@ export const EarthquakeDetailModal: React.FC<EarthquakeDetailModalProps> = ({ it
     return () => {
       controller.abort();
     };
-  }, [item]);
+  }, [itemId]);
 
   useEffect(() => {
     if (!item) return;
