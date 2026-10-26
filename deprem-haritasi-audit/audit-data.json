@@ -1,0 +1,200 @@
+{
+  "summary": {
+    "health_score": 83,
+    "grade": "B+",
+    "target_url": "https://deprem-haritasi.onrender.com/",
+    "domain": "deprem-haritasi.onrender.com",
+    "business_type": "Utilities & Public Information Web Application (Disaster / Seismic Tracker)",
+    "audit_date": "2026-10-26",
+    "top_findings": [
+      {
+        "title": "Duplicate <h1> heading tags detected",
+        "severity": "Critical",
+        "category": "On-Page SEO"
+      },
+      {
+        "title": "HTTP Content-Language header mismatch ('en-US' vs Turkish site)",
+        "severity": "High",
+        "category": "Technical SEO"
+      },
+      {
+        "title": "Low static content density on initial load (153 words)",
+        "severity": "High",
+        "category": "Content Quality & E-E-A-T"
+      },
+      {
+        "title": "Missing llms.txt and AI agent discovery metadata",
+        "severity": "Medium",
+        "category": "AI Search Readiness (GEO)"
+      },
+      {
+        "title": "404 responses return Spring Boot Problem JSON instead of branded HTML",
+        "severity": "Medium",
+        "category": "Technical SEO"
+      }
+    ],
+    "quick_wins": [
+      "Remove the redundant <h1> tag so only one primary topic heading exists.",
+      "Fix server Content-Language header to 'tr' or 'tr-TR' in Spring Boot / Nginx.",
+      "Add /llms.txt with project overview and data source references for AI search citations.",
+      "Create a custom branded 404 error page with links back to the interactive map.",
+      "Add Author / Organization E-E-A-T signals and disclaimer in the footer."
+    ]
+  },
+  "categories": [
+    {
+      "name": "Technical SEO",
+      "score": 88,
+      "weight": 0.22,
+      "what_works": [
+        "HTTPS enforced with Cloudflare Edge CDN and HTTP/3 support",
+        "robots.txt is valid, accessible (200 OK), and references sitemap.xml",
+        "XML Sitemap is valid and lists all 81 provincial earthquake routes",
+        "Canonical link element is properly configured"
+      ],
+      "findings": [
+        {
+          "title": "HTTP Content-Language header mismatch ('en-US')",
+          "severity": "High",
+          "description": "Server sends 'Content-Language: en-US' while the site language is Turkish ('tr_TR'). This may cause geo-targeting confusion for international and regional crawlers.",
+          "recommendation": "Configure response header to 'Content-Language: tr' in Spring Boot application settings or reverse proxy."
+        },
+        {
+          "title": "404 responses return application/problem+json",
+          "severity": "Medium",
+          "description": "Non-existent routes return raw Spring Boot JSON error objects rather than a user-friendly HTML error page with navigation links.",
+          "recommendation": "Implement an HTML custom 404 error view that guides users back to the map."
+        }
+      ]
+    },
+    {
+      "name": "Content Quality & E-E-A-T",
+      "score": 76,
+      "weight": 0.23,
+      "what_works": [
+        "Official authority citations: Explicitly cites AFAD and Kandilli Rasathanesi",
+        "Educational FAQ covering magnitude formulas (Mw, ML, Md) and update intervals",
+        "High information accuracy regarding seismological metrics"
+      ],
+      "findings": [
+        {
+          "title": "Low static content ratio on raw HTML payload",
+          "severity": "High",
+          "description": "The raw HTML contains only ~153 words of static text before JavaScript hydration. Search bots without headless execution may miss dynamic listings.",
+          "recommendation": "Server-side render the top 5 most recent significant earthquakes into static HTML."
+        },
+        {
+          "title": "Missing publisher / organization biographical credentials",
+          "severity": "Medium",
+          "description": "Lacks an 'About / Contact / Editorial Policy' section explaining who maintains the platform and disclaimers regarding official emergency response.",
+          "recommendation": "Add a transparent About / Methodology modal or footer block with developer/team credentials."
+        }
+      ]
+    },
+    {
+      "name": "On-Page SEO",
+      "score": 80,
+      "weight": 0.20,
+      "what_works": [
+        "Strong title tag (69 characters) containing primary keywords",
+        "Well-crafted meta description (147 characters) with clear call-to-action",
+        "Complete Open Graph (og:*) and Twitter Card metadata with high-res image (1200x630)"
+      ],
+      "findings": [
+        {
+          "title": "Duplicate <h1> tags on homepage",
+          "severity": "Critical",
+          "description": "Found two <h1> tags: 'Türkiye Deprem Haritası ve Güncel Depremler | AFAD Verileri' and 'Türkiye Deprem Haritası ve Güncel Depremler'.",
+          "recommendation": "Keep exactly one semantic <h1> on the page; demote the second to <h2> or a styled <span>."
+        }
+      ]
+    },
+    {
+      "name": "Schema / Structured Data",
+      "score": 95,
+      "weight": 0.10,
+      "what_works": [
+        "WebApplication schema with complete pricing ($0 TRY) and category",
+        "WebSite schema with rich alternateName variations",
+        "FAQPage schema with 5 validated Questions and Answers eligible for Rich Snippets",
+        "All schemas cross-referenced with @id nodes"
+      ],
+      "findings": []
+    },
+    {
+      "name": "Performance & Core Web Vitals",
+      "score": 85,
+      "weight": 0.10,
+      "what_works": [
+        "Cloudflare CDN edge caching with dynamic compression (gzip)",
+        "Fast server response times (TTFB < 300ms)",
+        "Zero render-blocking unnecessary tracking scripts"
+      ],
+      "findings": [
+        {
+          "title": "Leaflet map tile and vector bundle loading budget",
+          "severity": "Medium",
+          "description": "Interactive map assets must ensure LCP is not delayed during initial tile fetching.",
+          "recommendation": "Preload primary font/CSS and defer non-critical map layer controls."
+        }
+      ]
+    },
+    {
+      "name": "AI Search Readiness (GEO)",
+      "score": 78,
+      "weight": 0.10,
+      "what_works": [
+        "Robots.txt explicitly allows GPTBot, PerplexityBot, ClaudeBot, and Google-Extended",
+        "Concise, definitive FAQ text format is highly quotable by LLM synthesizers"
+      ],
+      "findings": [
+        {
+          "title": "Missing /llms.txt file",
+          "severity": "Medium",
+          "description": "Site does not serve /llms.txt to guide AI agents to its structured data and live earthquake feeds.",
+          "recommendation": "Publish /llms.txt and /llms-full.txt describing the API and city-based pages."
+        }
+      ]
+    },
+    {
+      "name": "Images & Assets",
+      "score": 88,
+      "weight": 0.05,
+      "what_works": [
+        "Dedicated social preview card (1200x630 PNG) with explicit dimensions and alt text",
+        "Lightweight SVG vector icons for UI controls"
+      ],
+      "findings": []
+    }
+  ],
+  "action_plan": {
+    "phases": [
+      {
+        "name": "Phase 1: Critical & Quick Wins (Immediate)",
+        "timeframe": "Days 1-3",
+        "items": [
+          "Remove redundant duplicate <h1> heading tag",
+          "Correct Content-Language header to 'tr' in Spring Boot WebConfig",
+          "Deploy custom HTML 404 error page"
+        ]
+      },
+      {
+        "name": "Phase 2: Content & E-E-A-T Reinforcement",
+        "timeframe": "Weeks 1-2",
+        "items": [
+          "Include server-rendered top 5 latest earthquakes in initial HTML payload",
+          "Add About / Methodology / Disclaimer block in footer",
+          "Publish /llms.txt for AI search engine discoverability"
+        ]
+      },
+      {
+        "name": "Phase 3: Programmatic SEO & Authority",
+        "timeframe": "Weeks 3-4",
+        "items": [
+          "Ensure each of the 81 provincial pages (/son-depremler/{city}) has unique city-specific intro text and fault line context",
+          "Implement BreadcrumbList schema on all provincial sub-pages"
+        ]
+      }
+    ]
+  }
+}

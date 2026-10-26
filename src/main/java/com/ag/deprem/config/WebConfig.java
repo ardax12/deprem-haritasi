@@ -59,4 +59,23 @@ public class WebConfig implements WebMvcConfigurer {
         filterRegistration.addUrlPatterns("/api/*");
         return filterRegistration;
     }
+
+    @Bean
+    public FilterRegistrationBean<org.springframework.web.filter.OncePerRequestFilter> contentLanguageHeaderFilter() {
+        FilterRegistrationBean<org.springframework.web.filter.OncePerRequestFilter> filterRegistration = new FilterRegistrationBean<>();
+        filterRegistration.setFilter(new org.springframework.web.filter.OncePerRequestFilter() {
+            @Override
+            protected void doFilterInternal(jakarta.servlet.http.HttpServletRequest request,
+                                            jakarta.servlet.http.HttpServletResponse response,
+                                            jakarta.servlet.FilterChain filterChain)
+                    throws jakarta.servlet.ServletException, java.io.IOException {
+                response.setHeader("Content-Language", "tr");
+                response.setLocale(java.util.Locale.forLanguageTag("tr-TR"));
+                filterChain.doFilter(request, response);
+            }
+        });
+        filterRegistration.addUrlPatterns("/*");
+        filterRegistration.setOrder(org.springframework.core.Ordered.HIGHEST_PRECEDENCE + 10);
+        return filterRegistration;
+    }
 }

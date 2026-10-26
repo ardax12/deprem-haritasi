@@ -40,7 +40,7 @@
     <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png" />
 
     <!-- Structured Data / Schema.org (JSON-LD) -->
-    <script type="application/ld+json">
+    <script id="schema-org-seo" type="application/ld+json">
     {
       "@context": "https://schema.org",
       "@graph": [
@@ -127,31 +127,85 @@
     <div id="root">
       <noscript>
         <div style="max-width: 800px; margin: 40px auto; padding: 24px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; color: #f1f5f9; background: #0f172a; border-radius: 12px;">
-          <h1 style="font-size: 1.5rem; margin-bottom: 12px; color: #38bdf8;">Türkiye Deprem Haritası ve Güncel Depremler | AFAD Verileri</h1>
-          <p style="line-height: 1.6; color: #cbd5e1;">AFAD verileriyle Türkiye ve yakın çevresindeki en güncel sismik hareketliliği harita ve liste üzerinden takip edin.</p>
+          <div role="heading" aria-level="2" style="font-size: 1.5rem; margin-bottom: 12px; font-weight: 700; color: #38bdf8;">Türkiye Deprem Haritası ve Güncel Depremler | AFAD &amp; Kandilli Verileri</div>
+          <p style="line-height: 1.6; color: #cbd5e1;">AFAD ve Kandilli Rasathanesi verileriyle Türkiye ve yakın çevresindeki en güncel sismik hareketliliği interaktif harita ve anlık liste üzerinden takip edin.</p>
           <p style="line-height: 1.6; color: #94a3b8;">İnteraktif harita deneyimi için lütfen tarayıcınızda JavaScript'i etkinleştirin.</p>
         </div>
       </noscript>
-      <div id="crawler-fallback" style="max-width: 800px; margin: 0 auto; padding: 24px; background-color: #0f172a; color: #f8fafc; display: block;">
+      <div id="crawler-fallback" style="max-width: 900px; margin: 0 auto; padding: 24px; background-color: #0f172a; color: #f8fafc; display: block;">
         <header style="margin-bottom: 24px;">
-          <h1 style="font-size: 1.5rem; font-weight: 700; color: #f8fafc; margin-bottom: 8px;">Türkiye Deprem Haritası ve Güncel Depremler</h1>
-          <p style="color: #94a3b8; font-size: 0.95rem; line-height: 1.5;">AFAD verileriyle Türkiye ve yakın çevresindeki güncel depremleri interaktif harita ve anlık liste üzerinden takip edin.</p>
+          <h1 style="font-size: 1.65rem; font-weight: 700; color: #f8fafc; margin-bottom: 8px;">Türkiye Deprem Haritası ve Canlı Son Depremler</h1>
+          <p style="color: #94a3b8; font-size: 0.95rem; line-height: 1.6;">AFAD ve Boğaziçi Üniversitesi Kandilli Rasathanesi kamuya açık verileriyle Türkiye ve komşu coğrafyalardaki sismik hareketliliği anlık olarak harita, liste, odak derinliği ve büyüklük parametreleriyle inceleyin.</p>
         </header>
-        <section style="margin-bottom: 24px; background: #1e293b; padding: 16px; border-radius: 8px; border: 1px solid #334155;">
-          <h2 style="font-size: 1.1rem; color: #38bdf8; margin-bottom: 8px;">Canlı ve Açık Sismik Takip</h2>
-          <p style="color: #cbd5e1; font-size: 0.875rem; line-height: 1.6;">Bu harita, AFAD Deprem Dairesi Başkanlığı verilerini periyodik olarak tarayarak büyüklük, derinlik ve koordinat bilgilerini filtreleme seçenekleriyle sunar.</p>
+
+        <section style="margin-bottom: 24px; background: #1e293b; padding: 18px; border-radius: 8px; border: 1px solid #334155;">
+          <h2 style="font-size: 1.15rem; color: #38bdf8; margin-bottom: 8px;">Canlı ve Açık Sismik Takip Platformu</h2>
+          <p style="color: #cbd5e1; font-size: 0.9rem; line-height: 1.6; margin-bottom: 8px;">Bu platform, T.C. İçişleri Bakanlığı Afet ve Acil Durum Yönetimi Başkanlığı (AFAD) Deprem Dairesi ve Boğaziçi Üniversitesi Kandilli Rasathanesi (KOERI-BDTİM) açık servislerini periyodik olarak tarayarak büyüklük, odak derinliği, koordinat ve yerel hissedilme verilerini anlık filtreleme seçenekleriyle sunar.</p>
+          <p style="color: #cbd5e1; font-size: 0.9rem; line-height: 1.6;">Veriler otomatik sismik tespit algoritmaları ve ardından uzman sismologlarca yapılan revizyonlar dahil edilerek eşzamanlı olarak normalize edilir.</p>
         </section>
+
+        <section id="ssr-recent-earthquakes" style="margin-bottom: 24px;">
+          <h2 style="font-size: 1.15rem; color: #38bdf8; margin-bottom: 12px;">Son Kaydedilen Depremler</h2>
+          <p style="color: #94a3b8; font-size: 0.875rem; line-height: 1.5; margin-bottom: 12px;">Türkiye genelinde sismik sensör ağlarına yansıyan en güncel sarsıntılar anlık olarak listelenmektedir.</p>
+        </section>
+
+        <section style="margin-bottom: 24px; background: #1e293b; padding: 18px; border-radius: 8px; border: 1px solid #334155;">
+          <h2 style="font-size: 1.15rem; color: #38bdf8; margin-bottom: 8px;">Türkiye Fay Hatları ve Sismotektonik Yapı</h2>
+          <p style="color: #cbd5e1; font-size: 0.875rem; line-height: 1.6; margin-bottom: 8px;">Türkiye, Avrasya, Arap ve Afrika tektonik levhalarının kesişiminde yer almaktadır. Ülke genelindeki sismik aktivite ağırlıklı olarak üç ana sistem üzerinde gerçekleşir:</p>
+          <ul style="color: #94a3b8; font-size: 0.875rem; line-height: 1.6; margin-left: 20px; margin-bottom: 8px;">
+            <li><strong style="color: #e2e8f0;">Kuzey Anadolu Fay Hattı (KAF):</strong> Saros Körfezi'nden başlayıp Marmara Denizi, Bolu, Tokat ve Erzincan üzerinden Karlıova'ya uzanan yaklaşık 1500 km'lik sağ-yanal atımlı aktif fay kuşağı.</li>
+            <li><strong style="color: #e2e8f0;">Doğu Anadolu Fay Hattı (DAF):</strong> Hatay, Maraş, Adıyaman, Malatya, Elazığ ve Bingöl hatlarını birbirine bağlayan sol-yanal atımlı tektonik sınır.</li>
+            <li><strong style="color: #e2e8f0;">Batı Anadolu Açılma Rejimi:</strong> Ege kıyıları, İzmir, Manisa, Muğla ve Aydın graben sistemlerini kapsayan normal fay ağırlıklı sismik bölge.</li>
+          </ul>
+        </section>
+
         <section style="margin-bottom: 24px;">
-          <h2 style="font-size: 1.1rem; color: #38bdf8; margin-bottom: 12px;">Sıkça Sorulan Sorular</h2>
-          <article style="margin-bottom: 12px;">
+          <h2 style="font-size: 1.15rem; color: #38bdf8; margin-bottom: 12px;">İllere Göre Son Depremler ve Sismik Raporlar</h2>
+          <p style="color: #94a3b8; font-size: 0.875rem; line-height: 1.5; margin-bottom: 12px;">Türkiye'nin 81 iline özel anlık sarsıntı geçmişi ve odak derinlik dağılımı:</p>
+          <div style="display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 16px;">
+            <a href="/son-depremler/istanbul" style="color: #38bdf8; text-decoration: none; background: #1e293b; padding: 6px 12px; border-radius: 6px; font-size: 0.85rem; border: 1px solid #334155;">İstanbul Son Depremler</a>
+            <a href="/son-depremler/izmir" style="color: #38bdf8; text-decoration: none; background: #1e293b; padding: 6px 12px; border-radius: 6px; font-size: 0.85rem; border: 1px solid #334155;">İzmir Son Depremler</a>
+            <a href="/son-depremler/ankara" style="color: #38bdf8; text-decoration: none; background: #1e293b; padding: 6px 12px; border-radius: 6px; font-size: 0.85rem; border: 1px solid #334155;">Ankara Son Depremler</a>
+            <a href="/son-depremler/hatay" style="color: #38bdf8; text-decoration: none; background: #1e293b; padding: 6px 12px; border-radius: 6px; font-size: 0.85rem; border: 1px solid #334155;">Hatay Son Depremler</a>
+            <a href="/son-depremler/kahramanmaras" style="color: #38bdf8; text-decoration: none; background: #1e293b; padding: 6px 12px; border-radius: 6px; font-size: 0.85rem; border: 1px solid #334155;">Kahramanmaraş Son Depremler</a>
+            <a href="/son-depremler/malatya" style="color: #38bdf8; text-decoration: none; background: #1e293b; padding: 6px 12px; border-radius: 6px; font-size: 0.85rem; border: 1px solid #334155;">Malatya Son Depremler</a>
+            <a href="/son-depremler/adana" style="color: #38bdf8; text-decoration: none; background: #1e293b; padding: 6px 12px; border-radius: 6px; font-size: 0.85rem; border: 1px solid #334155;">Adana Son Depremler</a>
+            <a href="/son-depremler/gaziantep" style="color: #38bdf8; text-decoration: none; background: #1e293b; padding: 6px 12px; border-radius: 6px; font-size: 0.85rem; border: 1px solid #334155;">Gaziantep Son Depremler</a>
+            <a href="/son-depremler/bursa" style="color: #38bdf8; text-decoration: none; background: #1e293b; padding: 6px 12px; border-radius: 6px; font-size: 0.85rem; border: 1px solid #334155;">Bursa Son Depremler</a>
+            <a href="/son-depremler/antalya" style="color: #38bdf8; text-decoration: none; background: #1e293b; padding: 6px 12px; border-radius: 6px; font-size: 0.85rem; border: 1px solid #334155;">Antalya Son Depremler</a>
+            <a href="/son-depremler/diyarbakir" style="color: #38bdf8; text-decoration: none; background: #1e293b; padding: 6px 12px; border-radius: 6px; font-size: 0.85rem; border: 1px solid #334155;">Diyarbakır Son Depremler</a>
+            <a href="/son-depremler/van" style="color: #38bdf8; text-decoration: none; background: #1e293b; padding: 6px 12px; border-radius: 6px; font-size: 0.85rem; border: 1px solid #334155;">Van Son Depremler</a>
+            <a href="/son-depremler/elazig" style="color: #38bdf8; text-decoration: none; background: #1e293b; padding: 6px 12px; border-radius: 6px; font-size: 0.85rem; border: 1px solid #334155;">Elazığ Son Depremler</a>
+            <a href="/son-depremler/canakkale" style="color: #38bdf8; text-decoration: none; background: #1e293b; padding: 6px 12px; border-radius: 6px; font-size: 0.85rem; border: 1px solid #334155;">Çanakkale Son Depremler</a>
+            <a href="/son-depremler/mugla" style="color: #38bdf8; text-decoration: none; background: #1e293b; padding: 6px 12px; border-radius: 6px; font-size: 0.85rem; border: 1px solid #334155;">Muğla Son Depremler</a>
+            <a href="/son-depremler/balikesir" style="color: #38bdf8; text-decoration: none; background: #1e293b; padding: 6px 12px; border-radius: 6px; font-size: 0.85rem; border: 1px solid #334155;">Balıkesir Son Depremler</a>
+            <a href="/son-depremler/kocaeli" style="color: #38bdf8; text-decoration: none; background: #1e293b; padding: 6px 12px; border-radius: 6px; font-size: 0.85rem; border: 1px solid #334155;">Kocaeli Son Depremler</a>
+            <a href="/son-depremler/sakarya" style="color: #38bdf8; text-decoration: none; background: #1e293b; padding: 6px 12px; border-radius: 6px; font-size: 0.85rem; border: 1px solid #334155;">Sakarya Son Depremler</a>
+            <a href="/son-depremler/duzce" style="color: #38bdf8; text-decoration: none; background: #1e293b; padding: 6px 12px; border-radius: 6px; font-size: 0.85rem; border: 1px solid #334155;">Düzce Son Depremler</a>
+            <a href="/son-depremler/bingol" style="color: #38bdf8; text-decoration: none; background: #1e293b; padding: 6px 12px; border-radius: 6px; font-size: 0.85rem; border: 1px solid #334155;">Bingöl Son Depremler</a>
+          </div>
+        </section>
+
+        <section style="margin-bottom: 24px;">
+          <h2 style="font-size: 1.15rem; color: #38bdf8; margin-bottom: 12px;">Sıkça Sorulan Sorular</h2>
+          <article style="margin-bottom: 12px; background: #1e293b; padding: 14px; border-radius: 6px;">
             <h3 style="font-size: 0.95rem; color: #f1f5f9; margin-bottom: 4px;">Deprem verileri nereden temin ediliyor?</h3>
-            <p style="color: #94a3b8; font-size: 0.875rem; line-height: 1.5;">Veriler doğrudan AFAD resmi açık servislerinden anlık olarak çekilmektedir.</p>
+            <p style="color: #94a3b8; font-size: 0.875rem; line-height: 1.5;">Veriler doğrudan T.C. İçişleri Bakanlığı AFAD Deprem Dairesi Başkanlığı ve Boğaziçi Üniversitesi Kandilli Rasathanesi resmi açık servislerinden anlık olarak çekilmektedir.</p>
           </article>
-          <article style="margin-bottom: 12px;">
-            <h3 style="font-size: 0.95rem; color: #f1f5f9; margin-bottom: 4px;">Büyüklük ölçekleri (Mw, ML) neyi ifade eder?</h3>
-            <p style="color: #94a3b8; font-size: 0.875rem; line-height: 1.5;">Mw fiziksel enerji miktarını temsil eder ve en güvenilir ölçümdür. ML ise sismograf genliğine dayalı yerel büyüklüktür.</p>
+          <article style="margin-bottom: 12px; background: #1e293b; padding: 14px; border-radius: 6px;">
+            <h3 style="font-size: 0.95rem; color: #f1f5f9; margin-bottom: 4px;">Büyüklük ölçekleri (Mw, ML, Md) neyi ifade eder?</h3>
+            <p style="color: #94a3b8; font-size: 0.875rem; line-height: 1.5;">Mw (Moment Büyüklüğü), fay kırılmasında açığa çıkan toplam fiziksel enerjiyi logaritmik olarak ölçen ve bilimsel çevrelerde en güvenilir kabul edilen büyüklüktür. ML (Yerel / Richter), sismografların ibre genliğine dayalı yerel ölçümdür. Md ise sarsıntı sinyalinin kayıt süresine dayanır.</p>
+          </article>
+          <article style="margin-bottom: 12px; background: #1e293b; padding: 14px; border-radius: 6px;">
+            <h3 style="font-size: 0.95rem; color: #f1f5f9; margin-bottom: 4px;">AFAD ve Kandilli Rasathanesi verileri arasında neden fark olur?</h3>
+            <p style="color: #94a3b8; font-size: 0.875rem; line-height: 1.5;">Her iki kurum farklı istasyon dağılımlarına ve farklı hız modellerine sahiptir. Otomatik ilk çözümlerde küçük farklar oluşabilir; uzman sismologların manuel revizyonlarıyla veriler kesinleşir.</p>
           </article>
         </section>
+
+        <footer style="border-top: 1px solid #334155; padding-top: 16px; margin-top: 24px; color: #64748b; font-size: 0.8rem; line-height: 1.6;">
+          <p><strong style="color: #94a3b8;">Yasal Bilgilendirme ve E-E-A-T Sorumluluk Reddi:</strong> Bu platform bağımsız bir açık veri izleme arayüzüdür ve resmi bir acil durum/afet müdahale kurumu değildir. Deprem anında ve sonrasında resmi yönlendirmeler için daima <a href="https://www.afad.gov.tr" target="_blank" rel="noopener noreferrer" style="color: #38bdf8;">AFAD (afad.gov.tr)</a> duyuruları dikkate alınmalıdır.</p>
+        </footer>
+
         <div style="display: flex; align-items: center; justify-content: center; padding: 24px; color: #94a3b8; font-size: 0.875rem;">
           <span>Harita bileşenleri yükleniyor...</span>
         </div>

@@ -49,8 +49,29 @@ class SeoControllerTest {
                 .andExpect(content().contentTypeCompatibleWith(MediaType.TEXT_PLAIN))
                 .andExpect(content().string(containsString("User-agent: Google-Extended")))
                 .andExpect(content().string(containsString("User-agent: GPTBot")))
+                .andExpect(content().string(containsString("User-agent: ClaudeBot")))
                 .andExpect(content().string(containsString("User-agent: PerplexityBot")))
+                .andExpect(content().string(containsString("User-agent: Applebot-Extended")))
                 .andExpect(content().string(containsString("Sitemap: http://localhost/sitemap.xml")));
+    }
+
+    @Test
+    void getLlmsTxt_returnsValidMarkdown() throws Exception {
+        mockMvc.perform(get("/llms.txt"))
+                .andExpect(status().isOk())
+                .andExpect(content().contentTypeCompatibleWith(MediaType.TEXT_PLAIN))
+                .andExpect(content().string(containsString("# Türkiye Deprem Haritası")))
+                .andExpect(content().string(containsString("/son-depremler/istanbul")));
+    }
+
+    @Test
+    void getLlmsFullTxt_returnsComprehensiveDetails() throws Exception {
+        mockMvc.perform(get("/llms-full.txt"))
+                .andExpect(status().isOk())
+                .andExpect(content().contentTypeCompatibleWith(MediaType.TEXT_PLAIN))
+                .andExpect(content().string(containsString("Kuzey Anadolu Fay Hattı")))
+                .andExpect(content().string(containsString("AFAD")))
+                .andExpect(content().string(containsString("/son-depremler/duzce")));
     }
 
     @Test

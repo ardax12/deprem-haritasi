@@ -77,11 +77,32 @@ export function useSeo({ provinceName, activeItem, totalCount, latestItem }: Use
         '@context': 'https://schema.org',
         '@type': 'WebApplication',
         '@id': `${origin}/#webapp`,
-        name: 'Türkiye Canlı Deprem Takip ve Fay Hattı Haritası',
+        name: 'Türkiye Deprem Haritası',
+        alternateName: 'AFAD & Kandilli Canlı Deprem İzleme Haritası',
         description: 'AFAD ve Kandilli Rasathanesi kamuya açık verileriyle Türkiye son depremlerini canlı harita üzerinde gösteren bağımsız sismik izleme platformu.',
-        url: origin,
-        applicationCategory: 'UtilityApplication',
-        operatingSystem: 'All'
+        url: `${origin}/`,
+        applicationCategory: 'UtilitiesApplication',
+        operatingSystem: 'All',
+        inLanguage: 'tr',
+        offers: {
+          '@type': 'Offer',
+          price: '0',
+          priceCurrency: 'TRY',
+          url: `${origin}/`
+        }
+      },
+      {
+        '@context': 'https://schema.org',
+        '@type': 'WebSite',
+        '@id': `${origin}/#website`,
+        url: `${origin}/`,
+        name: 'Türkiye Deprem Haritası',
+        alternateName: [
+          'Deprem Haritası',
+          'Türkiye Canlı Deprem İzleme',
+          'AFAD ve Kandilli Deprem Haritası'
+        ],
+        inLanguage: 'tr'
       },
       {
         '@context': 'https://schema.org',

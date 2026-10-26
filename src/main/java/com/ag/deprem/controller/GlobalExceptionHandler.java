@@ -3,8 +3,10 @@ package com.ag.deprem.controller;
 import com.ag.deprem.service.AfadApiClient;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ProblemDetail;
+import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -99,19 +101,55 @@ public class GlobalExceptionHandler {
     }
 
     @ExceptionHandler(NoSuchElementException.class)
-    public ProblemDetail handleNotFound(NoSuchElementException e) {
+    public ResponseEntity<?> handleNotFound(NoSuchElementException e,
+                                            jakarta.servlet.http.HttpServletRequest request) {
+        String accept = request.getHeader("Accept");
+        String uri = request.getRequestURI();
+        if (uri != null && !uri.startsWith("/api/") && accept != null && accept.contains("text/html")) {
+            try {
+                org.springframework.core.io.ClassPathResource resource =
+                        new org.springframework.core.io.ClassPathResource("static/404.html");
+                if (resource.exists()) {
+                    byte[] bytes = resource.getInputStream().readAllBytes();
+                    return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                            .header(HttpHeaders.CONTENT_TYPE, "text/html; charset=UTF-8")
+                            .header("Content-Language", "tr")
+                            .body(new String(bytes, java.nio.charset.StandardCharsets.UTF_8));
+                }
+            } catch (Exception ex) {
+                log.warn("Failed to load static/404.html: {}", ex.getMessage());
+            }
+        }
         ProblemDetail problem = ProblemDetail.forStatusAndDetail(HttpStatus.NOT_FOUND, e.getMessage());
         problem.setTitle("Kayıt Bulunamadı");
         problem.setType(URI.create("urn:deprem:not-found"));
-        return problem;
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(problem);
     }
 
     @ExceptionHandler(org.springframework.web.servlet.resource.NoResourceFoundException.class)
-    public ProblemDetail handleNoResourceFound(org.springframework.web.servlet.resource.NoResourceFoundException e) {
+    public ResponseEntity<?> handleNoResourceFound(org.springframework.web.servlet.resource.NoResourceFoundException e,
+                                                    jakarta.servlet.http.HttpServletRequest request) {
+        String accept = request.getHeader("Accept");
+        String uri = request.getRequestURI();
+        if (uri != null && !uri.startsWith("/api/") && accept != null && accept.contains("text/html")) {
+            try {
+                org.springframework.core.io.ClassPathResource resource =
+                        new org.springframework.core.io.ClassPathResource("static/404.html");
+                if (resource.exists()) {
+                    byte[] bytes = resource.getInputStream().readAllBytes();
+                    return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                            .header(HttpHeaders.CONTENT_TYPE, "text/html; charset=UTF-8")
+                            .header("Content-Language", "tr")
+                            .body(new String(bytes, java.nio.charset.StandardCharsets.UTF_8));
+                }
+            } catch (Exception ex) {
+                log.warn("Failed to load static/404.html: {}", ex.getMessage());
+            }
+        }
         ProblemDetail problem = ProblemDetail.forStatusAndDetail(HttpStatus.NOT_FOUND, "İstenen kaynak bulunamadı: " + e.getResourcePath());
         problem.setTitle("Kaynak Bulunamadı");
         problem.setType(URI.create("urn:deprem:not-found"));
-        return problem;
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(problem);
     }
 
     @ExceptionHandler(Exception.class)

@@ -54,3 +54,9 @@ research/**/__pycache__/
 *.pem
 *.key
 *.crt
+
+### Local Agent & Tooling Environments ###
+.claude/
+.agents/
+.gemini/
+
